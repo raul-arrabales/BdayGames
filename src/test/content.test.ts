@@ -12,4 +12,12 @@ describe('parseGamePack', () => {
     expect(pack.challenges.some((challenge) => challenge.category === 'trivia')).toBe(true);
     expect(pack.twists.some((twist) => twist.effectType === 'steal_member')).toBe(true);
   });
+
+  it('parses YAML frontmatter without Node buffer helpers', () => {
+    const crlfPack = rawPack.replace(/\n/g, '\r\n');
+    const pack = parseGamePack(crlfPack);
+
+    expect(pack.title).toBe('Fiesta Familiar de Cumpleanos');
+    expect(pack.summary).toContain('retos');
+  });
 });

@@ -1,4 +1,3 @@
-import matter from 'gray-matter';
 import YAML from 'yaml';
 import type {
   ChallengeCard,
@@ -32,6 +31,25 @@ const twistMap: Record<string, TwistEffectType> = {
   double_round: 'double_round',
   skip_turn: 'skip_turn',
 };
+
+function parseFrontmatter(markdown: string): { data: FrontmatterShape; content: string } {
+  const normalized = markdown.replace(/\r\n/g, '\n');
+
+  if (!normalized.startsWith('---\n')) {
+    throw new Error('Game pack frontmatter is missing.');
+  }
+
+  const closingDelimiterIndex = normalized.indexOf('\n---\n', 4);
+  if (closingDelimiterIndex === -1) {
+    throw new Error('Game pack frontmatter is not closed.');
+  }
+
+  const frontmatterBlock = normalized.slice(4, closingDelimiterIndex);
+  const content = normalized.slice(closingDelimiterIndex + '\n---\n'.length);
+  const data = (YAML.parse(frontmatterBlock) as FrontmatterShape | null) ?? ({} as FrontmatterShape);
+
+  return { data, content };
+}
 
 function parseSectionBlocks(content: string): Record<string, string> {
   const sections = content.split(/^##\s+/m).filter(Boolean);
@@ -92,9 +110,9 @@ function parseTwists(block: string): TwistCard[] {
   }>) ?? [];
 
   return documents.map((parsed, index) => {
-      if (!(parsed.effectType in twistMap)) {
-        throw new Error(`Unsupported twist effect: ${parsed.effectType}`);
-      }
+    if (!(parsed.effectType in twistMap)) {
+      throw new Error(`Unsupported twist effect: ${parsed.effectType}`);
+    }
 
     return {
       id: `twist-${index + 1}`,
@@ -107,7 +125,7 @@ function parseTwists(block: string): TwistCard[] {
 }
 
 export function parseGamePack(markdown: string): GamePack {
-  const { data, content } = matter(markdown);
+  const { data, content } = parseFrontmatter(markdown);
   const frontmatter = data as FrontmatterShape;
 
   if (!frontmatter.id || !frontmatter.title || !frontmatter.locale) {
