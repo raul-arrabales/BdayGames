@@ -1,0 +1,340 @@
+:root {
+  font-family: "Trebuchet MS", "Avenir Next", sans-serif;
+  color: #fff7ed;
+  background:
+    radial-gradient(circle at top left, rgba(255, 107, 53, 0.28), transparent 25%),
+    radial-gradient(circle at top right, rgba(0, 179, 255, 0.22), transparent 22%),
+    linear-gradient(145deg, #150f35 0%, #24124f 38%, #7a2416 100%);
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(12, 17, 35, 0.7);
+  color: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  position: relative;
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.background-glow {
+  position: fixed;
+  width: 24rem;
+  height: 24rem;
+  filter: blur(80px);
+  border-radius: 999px;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.background-glow-a {
+  background: rgba(255, 211, 61, 0.45);
+  top: -4rem;
+  left: -4rem;
+}
+
+.background-glow-b {
+  background: rgba(0, 179, 255, 0.4);
+  right: -4rem;
+  bottom: -4rem;
+}
+
+.hero-card,
+.panel {
+  position: relative;
+  backdrop-filter: blur(14px);
+  background: rgba(10, 16, 37, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 28px;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.28);
+}
+
+.hero-card {
+  min-height: 70vh;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 1rem;
+  padding: 3rem;
+}
+
+.hero-card h1 {
+  margin: 0;
+  font-size: clamp(3.5rem, 8vw, 7rem);
+  line-height: 0.92;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hero-summary {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.muted {
+  margin: 0;
+  color: rgba(255, 247, 237, 0.75);
+}
+
+.eyebrow,
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.75rem;
+  color: #ffd33d;
+}
+
+.badge {
+  background: rgba(255, 211, 61, 0.12);
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button,
+.draft-member,
+.challenge-card,
+.score-actions button,
+.member-pills button {
+  border-radius: 16px;
+  padding: 0.9rem 1.2rem;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, #ff7a00, #ff3d81);
+  color: white;
+  font-weight: 700;
+}
+
+.secondary-button {
+  background: rgba(0, 179, 255, 0.2);
+  color: #d8f7ff;
+}
+
+.ghost-button {
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+}
+
+.cta-row,
+.action-row,
+.score-actions,
+.member-pills,
+.team-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.screen-grid.two-column,
+.dashboard-layout,
+.score-grid,
+.category-grid,
+.podium-grid,
+.award-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.screen-grid.two-column,
+.dashboard-layout {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.dashboard-layout {
+  grid-template-columns: 1.2fr 1fr;
+}
+
+.panel,
+.spotlight {
+  padding: 1.5rem;
+}
+
+.spotlight {
+  grid-column: 1 / -1;
+}
+
+.panel-header,
+.team-row,
+.score-card-header,
+.member-row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stack {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.team-card,
+.score-card,
+.award-card,
+.podium-card {
+  border-radius: 22px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+.member-row {
+  padding: 0.9rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.inline-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.turn-banner {
+  padding: 1rem 1.2rem;
+  border-radius: 22px;
+  border: 2px solid currentColor;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.team-chip {
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  color: #08111d;
+  font-weight: 800;
+}
+
+.draft-member,
+.challenge-card {
+  text-align: left;
+  display: grid;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+}
+
+.challenge-card.is-completed {
+  opacity: 0.6;
+  outline: 2px dashed rgba(255, 211, 61, 0.45);
+}
+
+.category-title {
+  text-transform: capitalize;
+}
+
+.active-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.rules-box,
+.twist-banner,
+.empty-state {
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.timer-ring {
+  width: 9rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 35%, transparent 36%),
+    conic-gradient(#ffd33d, #ff7a00, #ff3d81, #00b3ff, #ffd33d);
+  color: white;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.timer-ring small {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.podium-panel {
+  min-height: 70vh;
+  display: grid;
+  align-content: center;
+  gap: 1.5rem;
+}
+
+.podium-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.place-1 {
+  transform: translateY(-1rem);
+}
+
+@media (max-width: 960px) {
+  .screen-grid.two-column,
+  .dashboard-layout,
+  .podium-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell {
+    padding: 1rem;
+  }
+
+  .hero-card {
+    min-height: auto;
+    padding: 2rem;
+  }
+}
