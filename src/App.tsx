@@ -213,12 +213,34 @@ function App() {
   };
 
   useEffect(() => {
-    if (eventState.screen !== 'dashboard' || !hasCompletedAllRounds) {
+    if (eventState.screen !== 'dashboard' || !hasCompletedAllRounds || eventState.winner) {
       return;
     }
 
     setEventState((current) => (current.screen === 'winner' ? current : finalizeGameState(current)));
-  }, [eventState.screen, hasCompletedAllRounds]);
+  }, [eventState.screen, eventState.winner, hasCompletedAllRounds]);
+
+  const resumeWinnerGame = () => {
+    if (!undoAction) {
+      return;
+    }
+
+    setEventState((current) => {
+      const reverted = undoLastAction(current, undoAction);
+      const resumed = {
+        ...reverted,
+        screen: 'dashboard' as const,
+        winner: null,
+      };
+      timerSnapshotRef.current = {
+        challengeId: resumed.activeChallengeId,
+        secondsLeft: resumed.challengeTimerSecondsLeft,
+      };
+
+      return resumed;
+    });
+    setUndoAction(null);
+  };
 
   const assignCaptain = (teamId: string, memberId: string) => {
     updateState((current) => {
@@ -499,7 +521,9 @@ function App() {
           copy={copy}
           winner={eventState.winner}
           teams={eventState.teams}
+          members={eventState.members}
           onRestart={() => startNewGame(currentPack)}
+          onResumeGame={resumeWinnerGame}
         />
       ) : null}
     </main>

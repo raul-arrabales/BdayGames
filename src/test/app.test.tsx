@@ -128,14 +128,26 @@ describe('App', () => {
     const pack = parseGamePack(rawPack);
     const finalChallenge = pack.challenges[pack.challenges.length - 1];
     const completedChallengeIds = pack.challenges.slice(0, -1).map((challenge) => challenge.id);
+    const state = createInitialState(pack);
+    const winningTeam = state.teams[0];
+    const runnerUpTeam = state.teams[1];
+    const winnerMemberA = { ...createMember('Luna'), teamId: winningTeam.id };
+    const winnerMemberB = { ...createMember('Noa'), teamId: winningTeam.id };
+    const runnerUpMember = { ...createMember('Iris'), teamId: runnerUpTeam.id };
 
     window.localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
         version: PERSISTED_EVENT_VERSION,
         state: {
-          ...createInitialState(pack),
+          ...state,
           screen: 'dashboard',
+          teams: state.teams.map((team, index) =>
+            index === 0
+              ? { ...team, score: 120, memberIds: [winnerMemberA.id, winnerMemberB.id] }
+              : { ...team, score: 80, memberIds: [runnerUpMember.id] },
+          ),
+          members: [winnerMemberA, winnerMemberB, runnerUpMember, ...state.members.slice(3)],
           currentRound: pack.challenges.length,
           activeChallengeId: finalChallenge.id,
           challengeTimerDurationSeconds: finalChallenge.time,
@@ -158,6 +170,17 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Ganador' })).toBeInTheDocument();
     expect(screen.getByText('Podio final')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: winningTeam.name })).toBeInTheDocument();
+    expect(screen.getByText(winnerMemberA.name)).toBeInTheDocument();
+    expect(screen.getByText(winnerMemberB.name)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Empezar desde cero' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Volver al juego' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Volver al juego' }));
+
+    expect(await screen.findByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Marcar como completado' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: finalChallenge.title })).toBeInTheDocument();
   });
 
   it('applies a custom member score correction from the scoreboard', async () => {

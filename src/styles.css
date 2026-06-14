@@ -770,21 +770,283 @@ input[type="color"]::-moz-color-swatch {
   display: grid;
   align-content: center;
   gap: 1.5rem;
+  overflow: hidden;
+}
+
+.winner-panel {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  padding: 1.75rem;
+}
+
+.winner-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 211, 61, 0.18), transparent 18%),
+    radial-gradient(circle at 80% 18%, rgba(255, 122, 0, 0.16), transparent 20%),
+    radial-gradient(circle at 50% 82%, rgba(0, 179, 255, 0.12), transparent 24%);
+  pointer-events: none;
+}
+
+.winner-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.winner-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.winner-header h2 {
+  margin: 0.1rem 0 0;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.winner-medal {
+  position: relative;
+  width: 5.2rem;
+  height: 5.2rem;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  animation: medalBounce 2.4s ease-in-out infinite;
+}
+
+.winner-medal-ribbon {
+  position: absolute;
+  inset: 0.15rem 1.65rem 2.1rem;
+  border-radius: 999px 999px 0.8rem 0.8rem;
+  background: linear-gradient(180deg, #ff3d81, #ff7a00);
+  box-shadow: 0 10px 22px rgba(255, 61, 129, 0.18);
+}
+
+.winner-medal-ribbon::before,
+.winner-medal-ribbon::after {
+  content: '';
+  position: absolute;
+  top: 76%;
+  width: 1rem;
+  height: 1.9rem;
+  background: linear-gradient(180deg, #ff3d81, rgba(255, 122, 0, 0.8));
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.winner-medal-ribbon::before {
+  left: 0.08rem;
+  transform: rotate(-16deg);
+}
+
+.winner-medal-ribbon::after {
+  right: 0.08rem;
+  transform: rotate(16deg);
+}
+
+.winner-medal-badge {
+  width: 3.5rem;
+  height: 3.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #fff6bf, #ffd33d 38%, #ff9800 100%);
+  border: 3px solid rgba(255, 255, 255, 0.45);
+  color: #7a2416;
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 0 0 0.45rem rgba(255, 211, 61, 0.14),
+    0 18px 32px rgba(0, 0, 0, 0.22);
+}
+
+.winner-spotlight {
+  --champion-color: #ff7a00;
+  width: min(100%, 42rem);
+  display: grid;
+  gap: 0.9rem;
+  justify-items: center;
+  text-align: center;
+  padding: 1.4rem 1.3rem 1.5rem;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.05));
+  border: 2px solid var(--champion-color);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 24px 60px rgba(0, 0, 0, 0.25);
+}
+
+.winner-spotlight::before {
+  content: '';
+  width: min(100%, 16rem);
+  height: 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--champion-color), transparent);
+  opacity: 0.85;
+}
+
+.winner-label,
+.winner-members-title {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.76rem;
+  color: #ffd33d;
+}
+
+.winner-spotlight h3 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 0.95;
+}
+
+.winner-score {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: rgba(255, 247, 237, 0.96);
+}
+
+.winner-member-list {
+  width: 100%;
+  display: grid;
+  gap: 0.7rem;
+  padding-top: 0.35rem;
+}
+
+.winner-member-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.winner-member-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 0.95rem;
+  min-height: 2.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff7ed;
+  font-weight: 700;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.05);
+}
+
+.winner-member-chip.is-empty {
+  opacity: 0.7;
+}
+
+.winner-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.winner-sparkles span {
+  position: absolute;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #fff, #ffd33d 45%, transparent 70%);
+  opacity: 0.9;
+  animation: sparkleFloat 3.8s ease-in-out infinite;
+}
+
+.winner-sparkles span:nth-child(1) {
+  top: 12%;
+  left: 14%;
+  animation-delay: 0s;
+}
+
+.winner-sparkles span:nth-child(2) {
+  top: 18%;
+  right: 18%;
+  animation-delay: 0.45s;
+}
+
+.winner-sparkles span:nth-child(3) {
+  top: 38%;
+  left: 8%;
+  animation-delay: 0.9s;
+}
+
+.winner-sparkles span:nth-child(4) {
+  top: 46%;
+  right: 10%;
+  animation-delay: 1.2s;
+}
+
+.winner-sparkles span:nth-child(5) {
+  bottom: 18%;
+  left: 20%;
+  animation-delay: 1.6s;
+}
+
+.winner-sparkles span:nth-child(6) {
+  bottom: 22%;
+  right: 24%;
+  animation-delay: 2s;
 }
 
 .podium-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .place-1 {
   transform: translateY(-1rem);
 }
 
+.place-2,
+.place-3 {
+  min-height: 10rem;
+}
+
+@keyframes sparkleFloat {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.75;
+  }
+
+  50% {
+    transform: translateY(-0.45rem) scale(1.18);
+    opacity: 1;
+  }
+}
+
+@keyframes medalBounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-0.35rem) rotate(2deg);
+  }
+}
+
 @media (max-width: 960px) {
   .screen-grid.two-column,
   .dashboard-layout,
-  .podium-grid,
   .landing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .podium-grid {
     grid-template-columns: 1fr;
   }
 
@@ -808,5 +1070,15 @@ input[type="color"]::-moz-color-swatch {
 
   .timer-volume-control {
     min-width: 8.5rem;
+  }
+
+  .winner-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .winner-medal {
+    width: 4.6rem;
+    height: 4.6rem;
   }
 }
