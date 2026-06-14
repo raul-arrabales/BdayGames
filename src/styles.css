@@ -613,6 +613,58 @@ input[type="color"]::-moz-color-swatch {
   outline: 2px dashed rgba(255, 211, 61, 0.45);
 }
 
+.challenge-library-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.challenge-library-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 122, 0, 0.16), rgba(255, 255, 255, 0.06));
+  color: inherit;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.challenge-library-toggle strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.challenge-library-toggle-hint {
+  display: block;
+  color: rgba(255, 247, 237, 0.72);
+  font-size: 0.88rem;
+}
+
+.challenge-library-toggle-icon {
+  flex: 0 0 auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.challenge-library-content {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.challenge-library-close {
+  justify-self: start;
+}
+
 .category-title {
   text-transform: capitalize;
 }

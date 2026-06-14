@@ -101,6 +101,32 @@ describe('App', () => {
     expect(document.querySelector('.timer-ring.is-warning')).toBeInTheDocument();
   });
 
+  it('keeps the challenge library collapsed by default and lets the operator toggle it', async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: /Fiesta Familiar de Cumpleanos/ }));
+    expect(await screen.findByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Rellenar prueba 2x4' }));
+    expect(await screen.findByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
+
+    const pack = parseGamePack(rawPack);
+    const firstChallenge = pack.challenges[0];
+
+    expect(screen.queryByText(firstChallenge.title)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Abrir biblioteca de retos' }));
+
+    expect(screen.getByRole('button', { name: 'Contraer biblioteca' })).toBeInTheDocument();
+    expect(screen.getByText(firstChallenge.title)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Contraer biblioteca' }));
+
+    expect(screen.queryByText(firstChallenge.title)).not.toBeInTheDocument();
+  });
+
   it('shows the round progress track with past, current and pending rounds', async () => {
     const user = userEvent.setup();
     const pack = parseGamePack(rawPack);

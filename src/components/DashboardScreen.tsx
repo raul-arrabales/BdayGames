@@ -480,17 +480,17 @@ export function DashboardScreen({
         ) : null}
       </section>
 
-      <ChallengeLibrary
-        copy={copy}
-        challenges={challenges}
-        completedChallengeIds={completedChallengeIds}
-        onSelect={onSelectChallenge}
-      />
       <Scoreboard
         copy={copy}
         teams={teams}
         members={members}
         onAdjustManualScore={onAdjustManualScore}
+      />
+      <ChallengeLibrary
+        copy={copy}
+        challenges={challenges}
+        completedChallengeIds={completedChallengeIds}
+        onSelect={onSelectChallenge}
       />
     </div>
   );
