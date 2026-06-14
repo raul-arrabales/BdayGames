@@ -397,6 +397,25 @@ input[type="color"]::-moz-color-swatch {
   gap: 1rem;
 }
 
+.timer-panel {
+  display: grid;
+  gap: 0.9rem;
+  justify-items: start;
+}
+
+.timer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.timer-meta {
+  display: grid;
+  gap: 0.2rem;
+  color: rgba(255, 247, 237, 0.82);
+}
+
 .rules-box,
 .twist-banner,
 .empty-state {
@@ -406,23 +425,126 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .timer-ring {
-  width: 9rem;
+  position: relative;
+  width: 12rem;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 35%, transparent 36%),
-    conic-gradient(#ffd33d, #ff7a00, #ff3d81, #00b3ff, #ffd33d);
+  overflow: hidden;
+  background: conic-gradient(
+    from -90deg,
+    rgba(255, 255, 255, 0.08) 0deg,
+    rgba(255, 255, 255, 0.08) calc(var(--timer-empty-progress, 0) * 360deg),
+    #ffd33d calc(var(--timer-empty-progress, 0) * 360deg),
+    #ff7a00 360deg
+  );
   color: white;
-  font-size: 1.6rem;
+  font-size: 2.2rem;
   font-weight: 800;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.08) inset,
+    0 0 18px rgba(255, 122, 0, 0.2);
 }
 
-.timer-ring small {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 500;
+.timer-ring.is-warning {
+  background: conic-gradient(
+    from -90deg,
+    rgba(255, 106, 53, 0.16) 0deg,
+    rgba(255, 106, 53, 0.16) calc(var(--timer-empty-progress, 0) * 360deg),
+    #ffef73 calc(var(--timer-empty-progress, 0) * 360deg),
+    #ff9f1c 360deg
+  );
+  box-shadow:
+    0 0 0 2px rgba(255, 211, 61, 0.16) inset,
+    0 0 26px rgba(255, 159, 28, 0.45),
+    0 0 40px rgba(255, 211, 61, 0.14);
+}
+
+.timer-ring.is-warning .timer-ring-core {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.42), transparent 28%),
+    radial-gradient(circle at center, rgba(35, 18, 18, 0.92), rgba(65, 26, 17, 0.96));
+}
+
+.timer-ring.is-critical {
+  background: conic-gradient(
+    from -90deg,
+    rgba(255, 61, 129, 0.22) 0deg,
+    rgba(255, 61, 129, 0.22) calc(var(--timer-empty-progress, 0) * 360deg),
+    #ff8a00 calc(var(--timer-empty-progress, 0) * 360deg),
+    #ff3d81 360deg
+  );
+  box-shadow:
+    0 0 0 2px rgba(255, 61, 129, 0.26) inset,
+    0 0 30px rgba(255, 61, 129, 0.72),
+    0 0 56px rgba(255, 122, 0, 0.24);
+  animation: timerPulse 0.9s ease-in-out infinite;
+}
+
+.timer-ring.is-critical .timer-ring-core {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.46), transparent 28%),
+    radial-gradient(circle at center, rgba(39, 7, 14, 0.94), rgba(83, 10, 34, 0.98));
+}
+
+.timer-ring-core {
+  position: absolute;
+  inset: 18%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.36), transparent 28%),
+    radial-gradient(circle at center, rgba(10, 16, 37, 0.86), rgba(10, 16, 37, 0.94));
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.08) inset,
+    0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.timer-ring.is-warning span {
+  color: #fff5cc;
+}
+
+.timer-ring.is-critical span {
+  color: #fff0f6;
+}
+
+.timer-volume-control {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 10rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.timer-volume-control span,
+.timer-volume-control strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.timer-volume-slider {
+  width: 100%;
+  accent-color: #ff7a00;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+@keyframes timerPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: saturate(1);
+  }
+
+  50% {
+    transform: scale(1.04);
+    filter: saturate(1.2);
+  }
 }
 
 .podium-panel {
@@ -455,5 +577,14 @@ input[type="color"]::-moz-color-swatch {
   .hero-card {
     min-height: auto;
     padding: 2rem;
+  }
+
+  .timer-ring {
+    width: 10rem;
+    font-size: 1.9rem;
+  }
+
+  .timer-volume-control {
+    min-width: 8.5rem;
   }
 }

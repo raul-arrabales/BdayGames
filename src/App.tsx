@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DashboardScreen } from './components/DashboardScreen';
 import { DraftScreen } from './components/DraftScreen';
 import { LandingScreen } from './components/LandingScreen';
@@ -6,6 +6,7 @@ import { SetupScreen } from './components/SetupScreen';
 import { WinnerScreen } from './components/WinnerScreen';
 import { builtInGamePacks, createPackFromMarkdown, resolvePersistedPack, type PackBundle } from './lib/gamePacks';
 import {
+  DEFAULT_CHALLENGE_TIME_SECONDS,
   applyManualTeamScore,
   applyTwist,
   assignMemberToTeam,
@@ -19,9 +20,15 @@ import {
   initializeDraft,
   revealRandomTwist,
   setActiveChallenge,
+  setActiveChallengeWithDuration,
   setBirthdayPerson,
+  pauseChallengeTimer,
+  resetChallengeTimer,
+  startChallengeTimer,
+  tickChallengeTimer,
   undoLastAction,
 } from './lib/gameState';
+import { getTimerCue, playTimerCue, unlockTimerAudio } from './lib/timerAudio';
 import { strings } from './lib/i18n';
 import {
   clearPersistedEvent,
@@ -32,6 +39,7 @@ import {
 import type { EventState, PersistedEvent, UndoAction } from './types';
 
 const defaultPack = builtInGamePacks[0];
+const TIMER_VOLUME_STORAGE_KEY = 'bday-games-timer-volume';
 
 interface SavedSession {
   persisted: PersistedEvent;
@@ -47,6 +55,19 @@ function App() {
   const [hasStoredSave, setHasStoredSave] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [landingError, setLandingError] = useState<string | null>(null);
+  const [timerVolume, setTimerVolume] = useState<number>(() => {
+    try {
+      const stored = window.localStorage.getItem(TIMER_VOLUME_STORAGE_KEY);
+      const parsed = stored ? Number(stored) : NaN;
+      return Number.isFinite(parsed) ? Math.min(1, Math.max(0, parsed)) : 0.6;
+    } catch {
+      return 0.6;
+    }
+  });
+  const timerSnapshotRef = useRef<{ challengeId: string | null; secondsLeft: number }>({
+    challengeId: null,
+    secondsLeft: DEFAULT_CHALLENGE_TIME_SECONDS,
+  });
 
   useEffect(() => {
     const persisted = loadPersistedEvent();
@@ -54,7 +75,13 @@ function App() {
     if (persisted) {
       const resolvedPack = resolvePersistedPack(persisted);
       if (resolvedPack) {
-        setSavedSession({ persisted, pack: resolvedPack });
+        setSavedSession({
+          persisted: {
+            ...persisted,
+            state: normalizeTimerState(persisted.state, resolvedPack.pack),
+          },
+          pack: resolvedPack,
+        });
       } else {
         setLandingError(copy.missingPack);
       }
@@ -78,6 +105,59 @@ function App() {
     savePersistedEvent(payload);
   }, [currentPack, eventState, hydrated, undoAction]);
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TIMER_VOLUME_STORAGE_KEY, String(timerVolume));
+    } catch {
+      // Ignore storage failures for this preference.
+    }
+  }, [timerVolume]);
+
+  useEffect(() => {
+    if (
+      eventState.screen !== 'dashboard' ||
+      !eventState.activeChallengeId ||
+      !eventState.challengeTimerRunning ||
+      eventState.challengeTimerSecondsLeft <= 0
+    ) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setEventState((current) => tickChallengeTimer(current));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [
+    eventState.activeChallengeId,
+    eventState.challengeTimerRunning,
+    eventState.challengeTimerSecondsLeft,
+    eventState.screen,
+  ]);
+
+  useEffect(() => {
+    const snapshot = timerSnapshotRef.current;
+    const currentChallengeId = eventState.activeChallengeId;
+    const currentSecondsLeft = eventState.challengeTimerSecondsLeft;
+
+    if (snapshot.challengeId !== currentChallengeId) {
+      timerSnapshotRef.current = { challengeId: currentChallengeId, secondsLeft: currentSecondsLeft };
+      return;
+    }
+
+    if (eventState.screen !== 'dashboard') {
+      timerSnapshotRef.current = { challengeId: currentChallengeId, secondsLeft: currentSecondsLeft };
+      return;
+    }
+
+    const cue = getTimerCue(snapshot.secondsLeft, currentSecondsLeft);
+    if (cue) {
+      playTimerCue(cue, timerVolume);
+    }
+
+    timerSnapshotRef.current = { challengeId: currentChallengeId, secondsLeft: currentSecondsLeft };
+  }, [eventState.activeChallengeId, eventState.challengeTimerSecondsLeft, eventState.screen, timerVolume]);
+
   const gamePack = currentPack.pack;
   const activeChallenge = gamePack.challenges.find((challenge) => challenge.id === eventState.activeChallengeId) ?? null;
   const activeTwist = gamePack.twists.find((twist) => twist.id === eventState.activeTwistId) ?? null;
@@ -94,6 +174,7 @@ function App() {
       ...createInitialState(pack.pack),
       screen: 'setup',
     });
+    timerSnapshotRef.current = { challengeId: null, secondsLeft: DEFAULT_CHALLENGE_TIME_SECONDS };
   };
 
   const resumeSavedGame = () => {
@@ -104,7 +185,11 @@ function App() {
     setCurrentPack(savedSession.pack);
     setUndoAction(savedSession.persisted.undoAction);
     setLandingError(null);
-    setEventState(savedSession.persisted.state);
+    setEventState(normalizeTimerState(savedSession.persisted.state, savedSession.pack.pack));
+    timerSnapshotRef.current = {
+      challengeId: savedSession.persisted.state.activeChallengeId,
+      secondsLeft: savedSession.persisted.state.challengeTimerSecondsLeft,
+    };
   };
 
   const updateState = (updater: (current: EventState) => EventState) => {
@@ -166,6 +251,26 @@ function App() {
     startNewGame(pack);
   };
 
+  const normalizeTimerState = (state: EventState, pack: PackBundle['pack']): EventState => {
+    const challenge = pack.challenges.find((entry) => entry.id === state.activeChallengeId);
+    if (!challenge) {
+      return state;
+    }
+
+    const duration = challenge.time ?? DEFAULT_CHALLENGE_TIME_SECONDS;
+    const secondsLeft = Math.min(
+      duration,
+      Math.max(0, state.challengeTimerSecondsLeft ?? duration),
+    );
+
+    return {
+      ...state,
+      challengeTimerDurationSeconds: duration,
+      challengeTimerSecondsLeft: secondsLeft,
+      challengeTimerRunning: state.challengeTimerRunning && secondsLeft > 0,
+    };
+  };
+
   const uploadPack = async (file: File) => {
     try {
       const markdown = await file.text();
@@ -176,12 +281,18 @@ function App() {
     }
   };
 
+  const startTimer = () => {
+    void unlockTimerAudio();
+    updateState((current) => startChallengeTimer(current));
+  };
+
   const clearSavedGame = () => {
     clearPersistedEvent();
     setSavedSession(null);
     setHasStoredSave(false);
     setUndoAction(null);
     setLandingError(null);
+    timerSnapshotRef.current = { challengeId: null, secondsLeft: DEFAULT_CHALLENGE_TIME_SECONDS };
     setEventState((current) => ({
       ...createInitialState(currentPack.pack),
       screen: 'landing',
@@ -284,13 +395,24 @@ function App() {
           copy={copy}
           round={eventState.currentRound}
           activeChallenge={activeChallenge}
+          timerDurationSeconds={eventState.challengeTimerDurationSeconds}
+          timerSecondsLeft={eventState.challengeTimerSecondsLeft}
+          timerRunning={eventState.challengeTimerRunning}
+          timerVolume={timerVolume}
           completedChallengeIds={eventState.completedChallengeIds}
           challenges={gamePack.challenges}
           teams={eventState.teams}
           members={eventState.members}
           activeTwist={activeTwist}
           canUndo={Boolean(undoAction)}
-          onSelectChallenge={(challengeId) => updateState((current) => setActiveChallenge(current, challengeId))}
+          onSelectChallenge={(challengeId) =>
+            updateState((current) => {
+              const challenge = gamePack.challenges.find((entry) => entry.id === challengeId);
+              return challenge
+                ? setActiveChallengeWithDuration(current, challengeId, challenge.time ?? DEFAULT_CHALLENGE_TIME_SECONDS)
+                : setActiveChallenge(current, challengeId);
+            })
+          }
           onAwardPoints={(teamId, memberId, points) =>
             setEventState((current) => {
               const result = awardPoints(current, teamId, memberId, points);
@@ -305,6 +427,10 @@ function App() {
               return result.state;
             })
           }
+          onStartTimer={startTimer}
+          onPauseTimer={() => updateState((current) => pauseChallengeTimer(current))}
+          onResetTimer={() => updateState((current) => resetChallengeTimer(current))}
+          onChangeTimerVolume={setTimerVolume}
           onRevealTwist={() => updateState((current) => revealRandomTwist(current, gamePack.twists))}
           onApplyTwist={() =>
             activeTwist &&

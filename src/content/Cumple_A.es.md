@@ -18,8 +18,10 @@ summary: Juegos Cumple A - Test
     - Un representante responde por turno.
     - Si falla, rebote para el otro equipo.
   points: 100
+  time: 30
 - title: Recuerdo sorpresa
   prompt: Identifica el ano del recuerdo familiar que lee el MC.
   rules:
     - Se permiten 10 segundos de deliberacion.
   points: 150
+  time: 45

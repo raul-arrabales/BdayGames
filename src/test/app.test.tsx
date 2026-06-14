@@ -50,4 +50,39 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
   });
+
+  it('shows timer controls for an active challenge', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const challenge = pack.challenges[0];
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...createInitialState(pack),
+          screen: 'dashboard',
+          activeChallengeId: challenge.id,
+          challengeTimerDurationSeconds: challenge.time,
+          challengeTimerSecondsLeft: 15,
+          challengeTimerRunning: false,
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    expect(await screen.findByRole('button', { name: 'Iniciar temporizador' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pausar temporizador' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reiniciar temporizador' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Volumen')).toBeInTheDocument();
+    expect(document.querySelector('.timer-ring.is-warning')).toBeInTheDocument();
+  });
 });

@@ -10,7 +10,12 @@ import {
   createMember,
   createTeam,
   initializeDraft,
+  pauseChallengeTimer,
+  resetChallengeTimer,
+  setActiveChallengeWithDuration,
   setBirthdayPerson,
+  startChallengeTimer,
+  tickChallengeTimer,
   undoLastAction,
 } from '../lib/gameState';
 
@@ -79,5 +84,29 @@ describe('game state helpers', () => {
 
     const ranking = computeWinner(result.state.teams);
     expect(ranking[0].score).toBe(result.state.teams[0].score);
+  });
+
+  it('manages the challenge timer lifecycle', () => {
+    const { pack, state } = seededState();
+    const challenge = pack.challenges.find((entry) => entry.time === 45);
+    expect(challenge).toBeDefined();
+
+    const activated = setActiveChallengeWithDuration(state, challenge!.id, challenge!.time);
+    expect(activated.challengeTimerDurationSeconds).toBe(45);
+    expect(activated.challengeTimerSecondsLeft).toBe(45);
+    expect(activated.challengeTimerRunning).toBe(false);
+
+    const running = startChallengeTimer(activated);
+    expect(running.challengeTimerRunning).toBe(true);
+
+    const ticked = tickChallengeTimer(running);
+    expect(ticked.challengeTimerSecondsLeft).toBe(44);
+
+    const paused = pauseChallengeTimer(ticked);
+    expect(paused.challengeTimerRunning).toBe(false);
+
+    const reset = resetChallengeTimer(paused);
+    expect(reset.challengeTimerSecondsLeft).toBe(45);
+    expect(reset.challengeTimerRunning).toBe(false);
   });
 });

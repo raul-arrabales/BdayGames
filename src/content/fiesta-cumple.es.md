@@ -18,11 +18,13 @@ summary: Un set inicial de retos, giros y reglas para dirigir una fiesta de cump
     - Un representante responde por turno.
     - Si falla, rebote para el otro equipo.
   points: 100
+  time: 60
 - title: Recuerdo sorpresa
   prompt: Identifica el ano del recuerdo familiar que lee el MC.
   rules:
     - Se permiten 10 segundos de deliberacion.
   points: 150
+  time: 45
 
 ## Retos:skill
 - title: Torre relampago
@@ -30,11 +32,13 @@ summary: Un set inicial de retos, giros y reglas para dirigir una fiesta de cump
   rules:
     - Solo vale usar una mano por jugador.
   points: 120
+  time: 45
 - title: Mimo turbo
   prompt: Representa una pelicula sin hablar y consigue que tu equipo la adivine.
   rules:
     - Tienes un intento por pelicula.
   points: 100
+  time: 60
 
 ## Retos:creative
 - title: Himno del cumple
@@ -42,11 +46,13 @@ summary: Un set inicial de retos, giros y reglas para dirigir una fiesta de cump
   rules:
     - Debe incluir una anecdota real.
   points: 180
+  time: 90
 - title: Foto congelada
   prompt: Haz una pose dramatica que represente unas vacaciones familiares.
   rules:
     - El publico vota al instante.
   points: 120
+  time: 60
 
 ## Retos:duel
 - title: Duelo de chistes
@@ -54,11 +60,13 @@ summary: Un set inicial de retos, giros y reglas para dirigir una fiesta de cump
   rules:
     - El MC decide el mejor remate.
   points: 90
+  time: 30
 - title: Piedra papel fiesta
   prompt: Tres rondas de piedra, papel o tijera con narracion teatral.
   rules:
     - Deben exagerar cada gesto.
   points: 80
+  time: 45
 
 ## Retos:chaos
 - title: Cambio de voz
@@ -66,11 +74,13 @@ summary: Un set inicial de retos, giros y reglas para dirigir una fiesta de cump
   rules:
     - Si todos se rien, suma extra de energia.
   points: 110
+  time: 60
 - title: Reto imposible
   prompt: Consigue que todo tu equipo mantenga una cara seria durante 20 segundos.
   rules:
     - Si alguien sonrie, gana el rival.
   points: 130
+  time: 20
 
 ## Sorpresas
 - title: Robo elegante

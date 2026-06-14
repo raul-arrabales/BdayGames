@@ -38,7 +38,15 @@ describe('storage', () => {
       }),
     );
 
-    expect(loadPersistedEvent()?.state.gamePackId).toBe('fiesta-cumple');
+    expect(loadPersistedEvent()).toMatchObject({
+      version: PERSISTED_EVENT_VERSION,
+      state: {
+        gamePackId: 'fiesta-cumple',
+        challengeTimerDurationSeconds: 90,
+        challengeTimerSecondsLeft: 90,
+        challengeTimerRunning: false,
+      },
+    });
 
     savePersistedEvent({
       version: PERSISTED_EVENT_VERSION,

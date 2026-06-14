@@ -42,7 +42,7 @@ export function ChallengeLibrary({
                     <strong>{challenge.title}</strong>
                     <span>{challenge.prompt}</span>
                     <span>
-                      {challenge.points} pts {completed ? `· ${copy.completed}` : ''}
+                      {challenge.points} pts · {challenge.time}s {completed ? `· ${copy.completed}` : ''}
                     </span>
                   </button>
                 );

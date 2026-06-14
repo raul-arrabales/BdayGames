@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { Dictionary } from '../lib/i18n';
 import type { ChallengeCard, Member, Team, TwistCard } from '../types';
 import { ChallengeLibrary } from './ChallengeLibrary';
@@ -8,6 +8,10 @@ interface DashboardScreenProps {
   copy: Dictionary;
   round: number;
   activeChallenge: ChallengeCard | null;
+  timerDurationSeconds: number;
+  timerSecondsLeft: number;
+  timerRunning: boolean;
+  timerVolume: number;
   completedChallengeIds: string[];
   challenges: ChallengeCard[];
   teams: Team[];
@@ -17,6 +21,10 @@ interface DashboardScreenProps {
   onSelectChallenge: (challengeId: string) => void;
   onAwardPoints: (teamId: string, memberId: string, points: number) => void;
   onCompleteChallenge: () => void;
+  onStartTimer: () => void;
+  onPauseTimer: () => void;
+  onResetTimer: () => void;
+  onChangeTimerVolume: (volume: number) => void;
   onRevealTwist: () => void;
   onApplyTwist: () => void;
   onUndo: () => void;
@@ -28,6 +36,10 @@ export function DashboardScreen({
   copy,
   round,
   activeChallenge,
+  timerDurationSeconds,
+  timerSecondsLeft,
+  timerRunning,
+  timerVolume,
   completedChallengeIds,
   challenges,
   teams,
@@ -37,25 +49,20 @@ export function DashboardScreen({
   onSelectChallenge,
   onAwardPoints,
   onCompleteChallenge,
+  onStartTimer,
+  onPauseTimer,
+  onResetTimer,
+  onChangeTimerVolume,
   onRevealTwist,
   onApplyTwist,
   onUndo,
   onAdjustTeamScore,
   onFinish,
 }: DashboardScreenProps) {
-  const [secondsLeft, setSecondsLeft] = useState(90);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setSecondsLeft((value) => (value > 0 ? value - 1 : 0));
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    setSecondsLeft(90);
-  }, [activeChallenge?.id]);
+  const timerProgress = timerDurationSeconds > 0 ? timerSecondsLeft / timerDurationSeconds : 0;
+  const timerEmptyProgress = 1 - timerProgress;
+  const timerUrgencyClass =
+    timerSecondsLeft <= 5 ? 'is-critical' : timerSecondsLeft <= 15 ? 'is-warning' : '';
 
   return (
     <div className="dashboard-layout">
@@ -89,9 +96,48 @@ export function DashboardScreen({
                 ))}
               </ul>
             </div>
-            <div className="timer-ring">
-              <span>{secondsLeft}s</span>
-              <small>{copy.timer}</small>
+            <div className="timer-panel">
+              <div className="timer-row">
+                <div
+                  className={`timer-ring ${timerUrgencyClass}`.trim()}
+                  aria-live="polite"
+                  style={{ '--timer-empty-progress': timerEmptyProgress } as CSSProperties}
+                >
+                  <div className="timer-ring-core" />
+                  <span>{timerSecondsLeft}s</span>
+                </div>
+                <label className="timer-volume-control">
+                  <span>{copy.timerVolume}</span>
+                  <input
+                    aria-label={copy.timerVolume}
+                    className="timer-volume-slider"
+                    max="1"
+                    min="0"
+                    step="0.05"
+                    type="range"
+                    value={timerVolume}
+                    onChange={(event) => onChangeTimerVolume(Number(event.target.value))}
+                  />
+                  <strong>{Math.round(timerVolume * 100)}%</strong>
+                </label>
+              </div>
+              <div className="timer-meta">
+                <strong>{timerRunning ? copy.pauseTimer : copy.startTimer}</strong>
+                <span>
+                  {timerSecondsLeft}/{timerDurationSeconds}s
+                </span>
+              </div>
+              <div className="action-row">
+                <button className="primary-button" disabled={timerRunning || timerSecondsLeft <= 0} onClick={onStartTimer}>
+                  {copy.startTimer}
+                </button>
+                <button className="secondary-button" disabled={!timerRunning} onClick={onPauseTimer}>
+                  {copy.pauseTimer}
+                </button>
+                <button className="ghost-button" onClick={onResetTimer}>
+                  {copy.resetTimer}
+                </button>
+              </div>
             </div>
             <div className="award-grid">
               {teams.map((team) => (

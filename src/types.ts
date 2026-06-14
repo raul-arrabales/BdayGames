@@ -23,6 +23,7 @@ export interface ChallengeCard {
   prompt: string;
   rules: string[];
   points: number;
+  time: number;
 }
 
 export interface TwistCard {
@@ -94,6 +95,9 @@ export interface EventState {
   picks: DraftPick[];
   currentRound: number;
   activeChallengeId: string | null;
+  challengeTimerDurationSeconds: number;
+  challengeTimerSecondsLeft: number;
+  challengeTimerRunning: boolean;
   completedChallengeIds: string[];
   revealedTwists: RevealedTwist[];
   activeTwistId: string | null;

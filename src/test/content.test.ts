@@ -10,6 +10,7 @@ describe('parseGamePack', () => {
     expect(pack.locale).toBe('es');
     expect(pack.rules.length).toBeGreaterThan(0);
     expect(pack.challenges.some((challenge) => challenge.category === 'trivia')).toBe(true);
+    expect(pack.challenges.every((challenge) => challenge.time > 0)).toBe(true);
     expect(pack.twists.some((twist) => twist.effectType === 'steal_member')).toBe(true);
   });
 

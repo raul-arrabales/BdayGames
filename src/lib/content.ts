@@ -6,6 +6,7 @@ import type {
   TwistCard,
   TwistEffectType,
 } from '../types';
+import { DEFAULT_CHALLENGE_TIME_SECONDS } from './gameState';
 
 interface FrontmatterShape {
   id: string;
@@ -82,9 +83,15 @@ function parseChallenges(block: string, category: ChallengeCategory): ChallengeC
     prompt: string;
     rules?: string[];
     points?: number;
+    time?: number;
   }>) ?? [];
 
   return documents.map((parsed, index) => {
+    const time =
+      typeof parsed.time === 'number' && Number.isFinite(parsed.time) && parsed.time > 0
+        ? Math.floor(parsed.time)
+        : DEFAULT_CHALLENGE_TIME_SECONDS;
+
     return {
       id: `${category}-${index + 1}`,
       category,
@@ -92,6 +99,7 @@ function parseChallenges(block: string, category: ChallengeCategory): ChallengeC
       prompt: parsed.prompt,
       rules: parsed.rules ?? [],
       points: parsed.points ?? 100,
+      time,
     };
   });
 }

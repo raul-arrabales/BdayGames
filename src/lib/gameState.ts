@@ -8,7 +8,8 @@ import type {
   TwistCard,
 } from '../types';
 
-export const APP_STATE_VERSION = 1;
+export const APP_STATE_VERSION = 2;
+export const DEFAULT_CHALLENGE_TIME_SECONDS = 90;
 
 function now(): string {
   return new Date().toISOString();
@@ -37,6 +38,9 @@ export function createInitialState(gamePack: GamePack): EventState {
     picks: [],
     currentRound: 1,
     activeChallengeId: null,
+    challengeTimerDurationSeconds: DEFAULT_CHALLENGE_TIME_SECONDS,
+    challengeTimerSecondsLeft: DEFAULT_CHALLENGE_TIME_SECONDS,
+    challengeTimerRunning: false,
     completedChallengeIds: [],
     revealedTwists: [],
     activeTwistId: null,
@@ -222,10 +226,75 @@ export function applyManualTeamScore(
 }
 
 export function setActiveChallenge(state: EventState, challengeId: string): EventState {
+  return setActiveChallengeWithDuration(state, challengeId, DEFAULT_CHALLENGE_TIME_SECONDS);
+}
+
+export function setActiveChallengeWithDuration(
+  state: EventState,
+  challengeId: string,
+  durationSeconds: number,
+): EventState {
+  const normalizedDuration = Math.max(1, Math.floor(durationSeconds));
+
   return {
     ...state,
     activeChallengeId: challengeId,
+    challengeTimerDurationSeconds: normalizedDuration,
+    challengeTimerSecondsLeft: normalizedDuration,
+    challengeTimerRunning: false,
     screen: 'dashboard',
+    lastUpdatedAt: now(),
+  };
+}
+
+export function startChallengeTimer(state: EventState): EventState {
+  if (!state.activeChallengeId || state.challengeTimerSecondsLeft <= 0) {
+    return state;
+  }
+
+  return {
+    ...state,
+    challengeTimerRunning: true,
+    lastUpdatedAt: now(),
+  };
+}
+
+export function pauseChallengeTimer(state: EventState): EventState {
+  if (!state.activeChallengeId || !state.challengeTimerRunning) {
+    return state;
+  }
+
+  return {
+    ...state,
+    challengeTimerRunning: false,
+    lastUpdatedAt: now(),
+  };
+}
+
+export function resetChallengeTimer(state: EventState): EventState {
+  if (!state.activeChallengeId) {
+    return state;
+  }
+
+  return {
+    ...state,
+    challengeTimerSecondsLeft: state.challengeTimerDurationSeconds,
+    challengeTimerRunning: false,
+    lastUpdatedAt: now(),
+  };
+}
+
+export function tickChallengeTimer(state: EventState): EventState {
+  if (!state.activeChallengeId || !state.challengeTimerRunning || state.challengeTimerSecondsLeft <= 0) {
+    return state;
+  }
+
+  const secondsLeft = Math.max(0, state.challengeTimerSecondsLeft - 1);
+
+  return {
+    ...state,
+    challengeTimerSecondsLeft: secondsLeft,
+    challengeTimerRunning: secondsLeft > 0,
     lastUpdatedAt: now(),
   };
 }
@@ -242,6 +311,7 @@ export function completeChallenge(
       ...state,
       completedChallengeIds: [...state.completedChallengeIds, state.activeChallengeId],
       activeChallengeId: null,
+      challengeTimerRunning: false,
       currentRound: state.currentRound + 1,
       lastUpdatedAt: now(),
     },
@@ -407,6 +477,8 @@ export function undoLastAction(state: EventState, undoAction: UndoAction | null)
         ...state,
         completedChallengeIds: state.completedChallengeIds.filter((id) => id !== undoAction.challengeId),
         activeChallengeId: undoAction.challengeId,
+        challengeTimerSecondsLeft: state.challengeTimerDurationSeconds,
+        challengeTimerRunning: false,
         currentRound: Math.max(1, state.currentRound - 1),
         lastUpdatedAt: now(),
       };
