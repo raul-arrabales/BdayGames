@@ -47,6 +47,14 @@ interface SavedSession {
   pack: PackBundle;
 }
 
+function finalizeGameState(state: EventState): EventState {
+  return {
+    ...state,
+    winner: computeWinner(state.teams),
+    screen: 'winner',
+  };
+}
+
 function App() {
   const copy = strings.es;
   const [eventState, setEventState] = useState<EventState>(() => createInitialState(defaultPack.pack));
@@ -163,6 +171,8 @@ function App() {
   const activeChallenge = gamePack.challenges.find((challenge) => challenge.id === eventState.activeChallengeId) ?? null;
   const activeTwist = gamePack.twists.find((twist) => twist.id === eventState.activeTwistId) ?? null;
   const currentDraftTeam = eventState.teams.find((team) => team.id === eventState.currentTurnTeamId);
+  const hasCompletedAllRounds =
+    gamePack.challenges.length > 0 && eventState.completedChallengeIds.length >= gamePack.challenges.length;
 
   const startNewGame = (pack: PackBundle) => {
     clearPersistedEvent();
@@ -198,12 +208,16 @@ function App() {
   };
 
   const finishGame = () => {
-    setEventState((current) => ({
-      ...current,
-      winner: computeWinner(current.teams),
-      screen: 'winner',
-    }));
+    setEventState((current) => finalizeGameState(current));
   };
+
+  useEffect(() => {
+    if (eventState.screen !== 'dashboard' || !hasCompletedAllRounds) {
+      return;
+    }
+
+    setEventState((current) => (current.screen === 'winner' ? current : finalizeGameState(current)));
+  }, [eventState.screen, hasCompletedAllRounds]);
 
   const assignCaptain = (teamId: string, memberId: string) => {
     updateState((current) => {

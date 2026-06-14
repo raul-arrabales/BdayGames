@@ -123,6 +123,43 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /Ronda 2 de/ })).toBeInTheDocument();
   });
 
+  it('moves to the final results screen once all rounds are completed', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const finalChallenge = pack.challenges[pack.challenges.length - 1];
+    const completedChallengeIds = pack.challenges.slice(0, -1).map((challenge) => challenge.id);
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...createInitialState(pack),
+          screen: 'dashboard',
+          currentRound: pack.challenges.length,
+          activeChallengeId: finalChallenge.id,
+          challengeTimerDurationSeconds: finalChallenge.time,
+          challengeTimerSecondsLeft: finalChallenge.time,
+          challengeTimerRunning: false,
+          completedChallengeIds,
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    await user.click(screen.getByRole('button', { name: 'Marcar como completado' }));
+
+    expect(await screen.findByRole('heading', { name: 'Ganador' })).toBeInTheDocument();
+    expect(screen.getByText('Podio final')).toBeInTheDocument();
+  });
+
   it('applies a custom member score correction from the scoreboard', async () => {
     const user = userEvent.setup();
     const pack = parseGamePack(rawPack);
