@@ -395,6 +395,7 @@ function App() {
         <DashboardScreen
           copy={copy}
           round={eventState.currentRound}
+          currentRoundChallengeCount={gamePack.challenges.length}
           activeChallenge={activeChallenge}
           timerDurationSeconds={eventState.challengeTimerDurationSeconds}
           timerSecondsLeft={eventState.challengeTimerSecondsLeft}

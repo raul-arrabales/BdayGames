@@ -86,6 +86,43 @@ describe('App', () => {
     expect(document.querySelector('.timer-ring.is-warning')).toBeInTheDocument();
   });
 
+  it('shows the round progress track with past, current and pending rounds', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const firstChallenge = pack.challenges[0];
+    const secondChallenge = pack.challenges[1];
+    const state = createInitialState(pack);
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          currentRound: 2,
+          activeChallengeId: secondChallenge.id,
+          completedChallengeIds: [firstChallenge.id],
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    const steps = document.querySelectorAll('.round-progress-step');
+    expect(steps[0]).toHaveClass('is-completed');
+    expect(steps[1]).toHaveClass('is-current');
+    expect(steps[1].querySelector('.round-progress-node')).toHaveAttribute('aria-current', 'step');
+    expect(steps[2]).toHaveClass('is-pending');
+    expect(screen.getByRole('heading', { name: /Ronda 2 de/ })).toBeInTheDocument();
+  });
+
   it('applies a custom member score correction from the scoreboard', async () => {
     const user = userEvent.setup();
     const pack = parseGamePack(rawPack);

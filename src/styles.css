@@ -402,6 +402,113 @@ input[type="color"]::-moz-color-swatch {
   grid-column: 1 / -1;
 }
 
+.round-progress {
+  --round-node-size: clamp(1.45rem, 1.9vw, 2rem);
+  --round-line-thickness: 0.28rem;
+  --round-track-padding-top: 0.72rem;
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.05));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.round-progress-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.round-progress-header h3 {
+  margin: 0.15rem 0 0;
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+}
+
+.round-progress-track {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin: 0;
+  padding: var(--round-track-padding-top) 0 0.15rem;
+  list-style: none;
+  min-width: 0;
+}
+
+.round-progress-track::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--round-node-size) / 2);
+  right: calc(var(--round-node-size) / 2);
+  top: calc(
+    var(--round-track-padding-top) + var(--round-node-size) / 2 - var(--round-line-thickness) / 2
+  );
+  height: var(--round-line-thickness);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 211, 61, 0.9), rgba(0, 179, 255, 0.72));
+  opacity: 0.45;
+}
+
+.round-progress-step {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.round-progress-node {
+  position: relative;
+  z-index: 1;
+  width: var(--round-node-size);
+  height: var(--round-node-size);
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.26);
+  background: rgba(12, 17, 35, 0.98);
+  color: rgba(255, 247, 237, 0.78);
+  font-size: 0.88rem;
+  font-weight: 800;
+  box-shadow:
+    0 0 0 0.38rem rgba(10, 16, 37, 0.78),
+    0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.round-progress-step.is-completed .round-progress-node {
+  background: linear-gradient(135deg, #44d07a, #1fbd67);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #f7fff8;
+  box-shadow:
+    0 0 0 0.38rem rgba(10, 16, 37, 0.88),
+    0 10px 18px rgba(31, 189, 103, 0.18);
+}
+
+.round-progress-step.is-current .round-progress-node {
+  background: linear-gradient(135deg, #ff7a00, #ff3d81);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+  transform: scale(1.08);
+  box-shadow:
+    0 0 0 0.42rem rgba(10, 16, 37, 0.92),
+    0 12px 22px rgba(255, 61, 129, 0.18);
+}
+
+.round-progress-step.is-pending .round-progress-node {
+  background: rgba(18, 26, 52, 0.98);
+  border-color: rgba(255, 255, 255, 0.12);
+  border-style: dashed;
+  color: rgba(255, 247, 237, 0.48);
+  box-shadow:
+    0 0 0 0.38rem rgba(10, 16, 37, 0.9),
+    0 8px 18px rgba(0, 0, 0, 0.16);
+}
+
 .panel-header,
 .team-row,
 .score-card-header,
@@ -686,6 +793,10 @@ input[type="color"]::-moz-color-swatch {
   .timer-ring {
     width: 10rem;
     font-size: 1.9rem;
+  }
+
+  .round-progress-header {
+    flex-direction: column;
   }
 
   .timer-volume-control {

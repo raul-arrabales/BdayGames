@@ -2,11 +2,13 @@ import type { CSSProperties } from 'react';
 import type { Dictionary } from '../lib/i18n';
 import type { ChallengeCard, Member, Team, TwistCard } from '../types';
 import { ChallengeLibrary } from './ChallengeLibrary';
+import { RoundProgress } from './RoundProgress';
 import { Scoreboard } from './Scoreboard';
 
 interface DashboardScreenProps {
   copy: Dictionary;
   round: number;
+  currentRoundChallengeCount: number;
   activeChallenge: ChallengeCard | null;
   timerDurationSeconds: number;
   timerSecondsLeft: number;
@@ -35,6 +37,7 @@ interface DashboardScreenProps {
 export function DashboardScreen({
   copy,
   round,
+  currentRoundChallengeCount,
   activeChallenge,
   timerDurationSeconds,
   timerSecondsLeft,
@@ -67,6 +70,12 @@ export function DashboardScreen({
   return (
     <div className="dashboard-layout">
       <section className="panel spotlight">
+        <RoundProgress
+          copy={copy}
+          currentRound={round}
+          totalRounds={currentRoundChallengeCount}
+          completedRounds={completedChallengeIds.length}
+        />
         <div className="panel-header">
           <div>
             <p className="eyebrow">
