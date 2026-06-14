@@ -50,6 +50,31 @@ select {
   color: inherit;
 }
 
+input[type="color"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 4.5rem;
+  height: 3.1rem;
+  padding: 0.25rem;
+  background: rgba(12, 17, 35, 0.92);
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 12px;
+}
+
+input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 12px;
+}
+
 #root {
   min-height: 100vh;
 }
@@ -213,6 +238,31 @@ select {
   gap: 0.8rem;
   align-items: center;
   justify-content: space-between;
+}
+
+.team-name-input {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.team-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 0 0 auto;
+}
+
+.team-color-swatch {
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 2px rgba(10, 16, 37, 0.8) inset;
+}
+
+.team-color-input {
+  width: 4.5rem;
+  flex: 0 0 auto;
 }
 
 .stack {

@@ -1,6 +1,8 @@
 import type { PersistedEvent } from '../types';
 
-export const STORAGE_KEY = 'bday-games-event';
+const storageNamespace = import.meta.env.MODE === 'playtest' ? 'playtest' : '';
+
+export const STORAGE_KEY = storageNamespace ? `bday-games-event:${storageNamespace}` : 'bday-games-event';
 
 export function loadPersistedEvent(): PersistedEvent | null {
   try {

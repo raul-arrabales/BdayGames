@@ -48,16 +48,21 @@ export function SetupScreen({
             <article className="team-card" key={team.id}>
               <div className="team-row">
                 <input
+                  className="team-name-input"
                   aria-label={`${copy.teams} ${team.name}`}
                   value={team.name}
                   onChange={(event) => onUpdateTeam(team.id, 'name', event.target.value)}
                 />
-                <input
-                  aria-label={`${copy.teams} color`}
-                  type="color"
-                  value={team.color}
-                  onChange={(event) => onUpdateTeam(team.id, 'color', event.target.value)}
-                />
+                <div className="team-color-picker">
+                  <span className="team-color-swatch" aria-hidden="true" style={{ backgroundColor: team.color }} />
+                  <input
+                    className="team-color-input"
+                    aria-label={`${copy.teams} color`}
+                    type="color"
+                    value={team.color}
+                    onChange={(event) => onUpdateTeam(team.id, 'color', event.target.value)}
+                  />
+                </div>
                 <button className="ghost-button" onClick={() => onRemoveTeam(team.id)}>
                   X
                 </button>
