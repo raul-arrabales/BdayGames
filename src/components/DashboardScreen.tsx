@@ -19,9 +19,11 @@ interface DashboardScreenProps {
   teams: Team[];
   members: Member[];
   activeTwist: TwistCard | null;
+  challengeAwarded: boolean;
   canUndo: boolean;
   onSelectChallenge: (challengeId: string) => void;
   onAwardPoints: (teamId: string, memberId: string, points: number) => void;
+  onAwardTeamPoints: (teamId: string, points: number) => void;
   onCompleteChallenge: () => void;
   onStartTimer: () => void;
   onPauseTimer: () => void;
@@ -48,9 +50,11 @@ export function DashboardScreen({
   teams,
   members,
   activeTwist,
+  challengeAwarded,
   canUndo,
   onSelectChallenge,
   onAwardPoints,
+  onAwardTeamPoints,
   onCompleteChallenge,
   onStartTimer,
   onPauseTimer,
@@ -158,15 +162,24 @@ export function DashboardScreen({
                       .map((member) => (
                         <button
                           key={member.id}
+                          disabled={challengeAwarded}
                           onClick={() => onAwardPoints(team.id, member.id, activeChallenge.points)}
                         >
                           {member.name}
                         </button>
                       ))}
                   </div>
+                  <button
+                    className="secondary-button award-team-button"
+                    disabled={challengeAwarded || members.every((member) => member.teamId !== team.id)}
+                    onClick={() => onAwardTeamPoints(team.id, activeChallenge.points)}
+                  >
+                    {copy.awardWholeTeam}
+                  </button>
                 </article>
               ))}
             </div>
+            {challengeAwarded ? <p className="muted">{copy.pointsAlreadyAssigned}</p> : null}
             <div className="action-row">
               <button className="primary-button" onClick={onCompleteChallenge}>
                 {copy.markCompleted}

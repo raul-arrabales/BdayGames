@@ -8,7 +8,7 @@ import type {
   TwistCard,
 } from '../types';
 
-export const APP_STATE_VERSION = 2;
+export const APP_STATE_VERSION = 3;
 export const DEFAULT_CHALLENGE_TIME_SECONDS = 90;
 
 function now(): string {
@@ -38,6 +38,7 @@ export function createInitialState(gamePack: GamePack): EventState {
     picks: [],
     currentRound: 1,
     activeChallengeId: null,
+    challengeAwarded: false,
     challengeTimerDurationSeconds: DEFAULT_CHALLENGE_TIME_SECONDS,
     challengeTimerSecondsLeft: DEFAULT_CHALLENGE_TIME_SECONDS,
     challengeTimerRunning: false,
@@ -176,7 +177,14 @@ export function awardPoints(
   teamId: string,
   memberId: string,
   points: number,
-): { state: EventState; undoAction: UndoAction } {
+): { state: EventState; undoAction: UndoAction | null } {
+  if (state.challengeAwarded) {
+    return {
+      state,
+      undoAction: null,
+    };
+  }
+
   const multiplier = state.activeDoubleRound ? 2 : 1;
   const finalPoints = points * multiplier;
 
@@ -193,6 +201,7 @@ export function awardPoints(
       teams,
       members,
       activeDoubleRound: false,
+      challengeAwarded: true,
       lastUpdatedAt: now(),
     },
     undoAction: {
@@ -200,6 +209,75 @@ export function awardPoints(
       memberId,
       teamId,
       points: finalPoints,
+      previousDoubleRound: state.activeDoubleRound,
+    },
+  };
+}
+
+function distributePointsAcrossMembers(points: number, memberCount: number): number[] {
+  const baseDelta = Math.trunc(points / memberCount);
+  let remainder = points - baseDelta * memberCount;
+
+  return Array.from({ length: memberCount }, () => {
+    const extra = remainder === 0 ? 0 : remainder > 0 ? 1 : -1;
+    if (remainder !== 0) {
+      remainder += remainder > 0 ? -1 : 1;
+    }
+
+    return baseDelta + extra;
+  });
+}
+
+export function awardTeamPoints(
+  state: EventState,
+  teamId: string,
+  points: number,
+): { state: EventState; undoAction: UndoAction | null } {
+  if (state.challengeAwarded) {
+    return {
+      state,
+      undoAction: null,
+    };
+  }
+
+  const multiplier = state.activeDoubleRound ? 2 : 1;
+  const finalPoints = points * multiplier;
+  const teamMembers = state.members.filter((member) => member.teamId === teamId);
+  const targetTeam = state.teams.find((team) => team.id === teamId);
+  const previousTeamScore = targetTeam?.score ?? 0;
+  const previousMemberScores = teamMembers.map((member) => ({ memberId: member.id, points: member.points }));
+
+  if (!targetTeam || teamMembers.length === 0) {
+    return {
+      state,
+      undoAction: null,
+    };
+  }
+
+  const memberAdjustments = distributePointsAcrossMembers(finalPoints, teamMembers.length);
+
+  return {
+    state: {
+      ...state,
+      teams: state.teams.map((team) =>
+        team.id === teamId ? { ...team, score: team.score + finalPoints } : team,
+      ),
+      members: state.members.map((member) => {
+        const memberIndex = teamMembers.findIndex((entry) => entry.id === member.id);
+        const delta = memberIndex >= 0 ? memberAdjustments[memberIndex] : null;
+        return typeof delta === 'number' ? { ...member, points: member.points + delta } : member;
+      }),
+      challengeAwarded: true,
+      activeDoubleRound: false,
+      lastUpdatedAt: now(),
+    },
+    undoAction: {
+      type: 'award_team_points',
+      teamId,
+      points: finalPoints,
+      previousTeamScore,
+      previousMemberScores,
+      previousDoubleRound: state.activeDoubleRound,
     },
   };
 }
@@ -283,19 +361,11 @@ export function applyManualAllMembersScore(
     };
   }
 
-  const baseDelta = Math.trunc(points / memberCount);
-  let remainder = points - baseDelta * memberCount;
-
-  const memberAdjustments = teamMembers.map((member) => {
-    const extra = remainder === 0 ? 0 : remainder > 0 ? 1 : -1;
-    if (remainder !== 0) {
-      remainder += remainder > 0 ? -1 : 1;
-    }
-    return {
-      memberId: member.id,
-      delta: baseDelta + extra,
-    };
-  });
+  const memberDeltas = distributePointsAcrossMembers(points, memberCount);
+  const memberAdjustments = teamMembers.map((member, index) => ({
+    memberId: member.id,
+    delta: memberDeltas[index],
+  }));
 
   return {
     state: {
@@ -333,6 +403,7 @@ export function setActiveChallengeWithDuration(
   return {
     ...state,
     activeChallengeId: challengeId,
+    challengeAwarded: false,
     challengeTimerDurationSeconds: normalizedDuration,
     challengeTimerSecondsLeft: normalizedDuration,
     challengeTimerRunning: false,
@@ -556,6 +627,36 @@ export function undoLastAction(state: EventState, undoAction: UndoAction | null)
             ? { ...member, points: Math.max(0, member.points - undoAction.points) }
             : member,
         ),
+        activeDoubleRound:
+          typeof undoAction.previousDoubleRound === 'boolean'
+            ? undoAction.previousDoubleRound
+            : state.activeDoubleRound,
+        challengeAwarded: false,
+        lastUpdatedAt: now(),
+      };
+    case 'award_team_points':
+      return {
+        ...state,
+        teams: state.teams.map((team) =>
+          team.id === undoAction.teamId
+            ? {
+                ...team,
+                score:
+                  typeof undoAction.previousTeamScore === 'number'
+                    ? undoAction.previousTeamScore
+                    : Math.max(0, team.score - undoAction.points),
+              }
+            : team,
+        ),
+        members: state.members.map((member) => {
+          const snapshot = undoAction.previousMemberScores.find((entry) => entry.memberId === member.id);
+          return snapshot ? { ...member, points: snapshot.points } : member;
+        }),
+        activeDoubleRound:
+          typeof undoAction.previousDoubleRound === 'boolean'
+            ? undoAction.previousDoubleRound
+            : state.activeDoubleRound,
+        challengeAwarded: false,
         lastUpdatedAt: now(),
       };
     case 'manual_score_adjustment':

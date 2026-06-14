@@ -71,6 +71,8 @@ export const strings = {
     pauseTimer: 'Pausar temporizador',
     resetTimer: 'Reiniciar temporizador',
     timerVolume: 'Volumen',
+    awardWholeTeam: 'Todo el equipo',
+    pointsAlreadyAssigned: 'Ya se asignaron los puntos de este reto',
     choosePack: 'Juego cargado',
     resetPrompt: 'Hay una partida guardada. Puedes continuarla o borrarla antes de empezar una nueva.',
     podium: ['Primer lugar', 'Segundo lugar', 'Tercer lugar'],

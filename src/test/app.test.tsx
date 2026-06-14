@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import App from '../App';
@@ -230,5 +230,70 @@ describe('App', () => {
         screen.getByRole('button', { name: 'Ocultar correccion personalizada' }),
     );
     expect(screen.queryByLabelText('Miembro')).not.toBeInTheDocument();
+  });
+
+  it('awards points to a whole team and disables the rest of the challenge controls', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const state = createInitialState(pack);
+    const challenge = pack.challenges[0];
+    const firstTeam = state.teams[0];
+    const secondTeam = state.teams[1];
+    const memberA = { ...createMember('Luna'), teamId: firstTeam.id, points: 0 };
+    const memberB = { ...createMember('Noa'), teamId: firstTeam.id, points: 0 };
+    const memberC = { ...createMember('Iris'), teamId: secondTeam.id, points: 0 };
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          activeChallengeId: challenge.id,
+          challengeTimerDurationSeconds: challenge.time,
+          challengeTimerSecondsLeft: challenge.time,
+          challengeTimerRunning: false,
+          teams: state.teams.map((entry, index) =>
+            index === 0
+              ? {
+                  ...entry,
+                  memberIds: [memberA.id, memberB.id],
+                  score: 0,
+                }
+              : {
+                  ...entry,
+                  memberIds: [memberC.id],
+                  score: 0,
+                },
+          ),
+          members: [memberA, memberB, memberC, ...state.members.slice(3)],
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    const firstTeamCard = screen.getByRole('heading', { name: firstTeam.name, level: 4 }).closest('.award-card') as HTMLElement | null;
+    expect(firstTeamCard).not.toBeNull();
+    await user.click(within(firstTeamCard!).getByRole('button', { name: 'Todo el equipo' }));
+
+    expect(screen.getByText(`${memberA.name}: 50`)).toBeInTheDocument();
+    expect(screen.getByText(`${memberB.name}: 50`)).toBeInTheDocument();
+    expect(screen.getByText(`${memberC.name}: 0`)).toBeInTheDocument();
+    expect(within(firstTeamCard!).getByRole('button', { name: memberA.name })).toBeDisabled();
+    expect(within(firstTeamCard!).getByRole('button', { name: memberB.name })).toBeDisabled();
+    expect(within(firstTeamCard!).getByRole('button', { name: 'Todo el equipo' })).toBeDisabled();
+    const secondTeamCard = screen.getByRole('heading', { name: secondTeam.name, level: 4 }).closest('.award-card') as HTMLElement | null;
+    expect(secondTeamCard).not.toBeNull();
+    expect(within(secondTeamCard!).getByRole('button', { name: 'Todo el equipo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: memberC.name })).toBeDisabled();
+    expect(screen.getByText('Ya se asignaron los puntos de este reto')).toBeInTheDocument();
   });
 });

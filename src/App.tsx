@@ -12,6 +12,7 @@ import {
   applyTwist,
   assignMemberToTeam,
   awardPoints,
+  awardTeamPoints,
   canStartDraft,
   completeChallenge,
   computeWinner,
@@ -420,6 +421,7 @@ function App() {
           teams={eventState.teams}
           members={eventState.members}
           activeTwist={activeTwist}
+          challengeAwarded={eventState.challengeAwarded}
           canUndo={Boolean(undoAction)}
           onSelectChallenge={(challengeId) =>
             updateState((current) => {
@@ -432,14 +434,27 @@ function App() {
           onAwardPoints={(teamId, memberId, points) =>
             setEventState((current) => {
               const result = awardPoints(current, teamId, memberId, points);
-              setUndoAction(result.undoAction);
+              if (result.undoAction) {
+                setUndoAction(result.undoAction);
+              }
+              return result.state;
+            })
+          }
+          onAwardTeamPoints={(teamId, points) =>
+            setEventState((current) => {
+              const result = awardTeamPoints(current, teamId, points);
+              if (result.undoAction) {
+                setUndoAction(result.undoAction);
+              }
               return result.state;
             })
           }
           onCompleteChallenge={() =>
             setEventState((current) => {
               const result = completeChallenge(current);
-              setUndoAction(result.undoAction);
+              if (result.undoAction) {
+                setUndoAction(result.undoAction);
+              }
               return result.state;
             })
           }
@@ -452,7 +467,9 @@ function App() {
             activeTwist &&
             setEventState((current) => {
               const result = applyTwist(current, activeTwist);
-              setUndoAction(result.undoAction);
+              if (result.undoAction) {
+                setUndoAction(result.undoAction);
+              }
               return result.state;
             })
           }

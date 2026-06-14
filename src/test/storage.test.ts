@@ -42,6 +42,7 @@ describe('storage', () => {
       version: PERSISTED_EVENT_VERSION,
       state: {
         gamePackId: 'fiesta-cumple',
+        challengeAwarded: false,
         challengeTimerDurationSeconds: 90,
         challengeTimerSecondsLeft: 90,
         challengeTimerRunning: false,

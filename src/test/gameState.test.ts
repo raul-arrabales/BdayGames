@@ -8,6 +8,7 @@ import {
   applyManualMemberScore,
   assignMemberToTeam,
   awardPoints,
+  awardTeamPoints,
   computeWinner,
   createInitialState,
   createMember,
@@ -71,10 +72,44 @@ describe('game state helpers', () => {
     const result = awardPoints(state, team.id, member.id, 100);
     expect(result.state.teams[0].score).toBe(100);
     expect(result.state.members[0].points).toBe(100);
+    expect(result.state.challengeAwarded).toBe(true);
 
     const reverted = undoLastAction(result.state, result.undoAction);
     expect(reverted.teams[0].score).toBe(0);
     expect(reverted.members[0].points).toBe(0);
+    expect(reverted.challengeAwarded).toBe(false);
+  });
+
+  it('awards points to an entire team and supports undo', () => {
+    const { state } = seededState();
+    const team = state.teams[0];
+    const memberA = state.members[0];
+    const memberB = createMember('Elia');
+    const memberC = createMember('Noa');
+    const adjustedState = {
+      ...state,
+      teams: state.teams.map((entry, index) => (index === 0 ? { ...entry, memberIds: [memberA.id, memberB.id, memberC.id] } : entry)),
+      members: [
+        { ...memberA, teamId: team.id, points: 10 },
+        { ...memberB, teamId: team.id, points: 5 },
+        { ...memberC, teamId: team.id, points: 1 },
+        ...state.members.slice(3),
+      ],
+    };
+
+    const result = awardTeamPoints(adjustedState, team.id, 7);
+    expect(result.state.teams[0].score).toBe(7);
+    expect(result.state.members[0].points).toBe(13);
+    expect(result.state.members[1].points).toBe(7);
+    expect(result.state.members[2].points).toBe(3);
+    expect(result.state.challengeAwarded).toBe(true);
+
+    const reverted = undoLastAction(result.state, result.undoAction);
+    expect(reverted.teams[0].score).toBe(0);
+    expect(reverted.members[0].points).toBe(10);
+    expect(reverted.members[1].points).toBe(5);
+    expect(reverted.members[2].points).toBe(1);
+    expect(reverted.challengeAwarded).toBe(false);
   });
 
   it('applies a manual team score correction and supports undo', () => {

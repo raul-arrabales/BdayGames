@@ -95,6 +95,7 @@ export interface EventState {
   picks: DraftPick[];
   currentRound: number;
   activeChallengeId: string | null;
+  challengeAwarded: boolean;
   challengeTimerDurationSeconds: number;
   challengeTimerSecondsLeft: number;
   challengeTimerRunning: boolean;
@@ -112,6 +113,15 @@ export type UndoAction =
       memberId: string;
       teamId: string;
       points: number;
+      previousDoubleRound?: boolean;
+    }
+  | {
+      type: 'award_team_points';
+      teamId: string;
+      points: number;
+      previousTeamScore: number;
+      previousMemberScores: Array<{ memberId: string; points: number }>;
+      previousDoubleRound?: boolean;
     }
   | {
       type: 'manual_score_adjustment';
