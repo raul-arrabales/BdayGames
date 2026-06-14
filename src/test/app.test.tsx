@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import App from '../App';
 import { parseGamePack } from '../lib/content';
-import { createInitialState } from '../lib/gameState';
+import { createInitialState, createMember } from '../lib/gameState';
 import { PERSISTED_EVENT_VERSION, STORAGE_KEY } from '../lib/storage';
 import rawPack from '../content/fiesta-cumple.es.md?raw';
 
@@ -84,5 +84,77 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Reiniciar temporizador' })).toBeInTheDocument();
     expect(screen.getByLabelText('Volumen')).toBeInTheDocument();
     expect(document.querySelector('.timer-ring.is-warning')).toBeInTheDocument();
+  });
+
+  it('applies a custom member score correction from the scoreboard', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const state = createInitialState(pack);
+    const team = state.teams[0];
+    const memberA = { ...createMember('Luna'), teamId: team.id, points: 0 };
+    const memberB = { ...createMember('Noa'), teamId: team.id, points: 0 };
+    const memberC = { ...createMember('Iris'), teamId: team.id, points: 0 };
+    const secondTeam = state.teams[1];
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          teams: state.teams.map((entry, index) =>
+            index === 0
+              ? {
+                  ...entry,
+                  memberIds: [memberA.id, memberB.id, memberC.id],
+                  score: 20,
+                }
+              : {
+                  ...entry,
+                  score: 5,
+                }
+          ),
+          members: [memberA, memberB, memberC, ...state.members.slice(3)],
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    const summaryList = screen.getByText('Resumen de puntos').closest('.score-summary')?.querySelector('.score-summary-list');
+    expect(summaryList).not.toBeNull();
+    const summaryItems = summaryList?.querySelectorAll('.score-summary-item');
+    expect(summaryItems?.[0]).toHaveTextContent(team.name);
+    expect(summaryItems?.[1]).toHaveTextContent(secondTeam.name);
+    expect(summaryItems?.[0]?.querySelector('.score-summary-fill')).toHaveStyle({ width: '100%' });
+    expect(summaryItems?.[1]?.querySelector('.score-summary-fill')).toHaveStyle({ width: '25%' });
+    expect(screen.queryByLabelText('Miembro')).not.toBeInTheDocument();
+    const teamCard = screen.getByRole('heading', { name: team.name }).closest('.score-card');
+    expect(teamCard).not.toBeNull();
+    await user.click(
+      teamCard!.querySelector('button[name="toggle-manual-adjustment"]') ??
+        screen.getAllByRole('button', { name: 'Mostrar correccion personalizada' })[0],
+    );
+    await user.selectOptions(screen.getByLabelText('Miembro'), 'all');
+    await user.clear(screen.getByLabelText('Puntos a aplicar'));
+    await user.type(screen.getByLabelText('Puntos a aplicar'), '25');
+    await user.click(screen.getByRole('button', { name: 'Aplicar correccion' }));
+
+    expect(teamCard?.querySelector('.score-card-header strong')).toHaveTextContent('45');
+    expect(screen.getByText(`${memberA.name}: 9`)).toBeInTheDocument();
+    expect(screen.getByText(`${memberB.name}: 8`)).toBeInTheDocument();
+    expect(screen.getByText(`${memberC.name}: 8`)).toBeInTheDocument();
+    await user.click(
+      teamCard!.querySelector('button[name="toggle-manual-adjustment"]') ??
+        screen.getByRole('button', { name: 'Ocultar correccion personalizada' }),
+    );
+    expect(screen.queryByLabelText('Miembro')).not.toBeInTheDocument();
   });
 });

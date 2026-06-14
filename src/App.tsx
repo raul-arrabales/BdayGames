@@ -7,7 +7,8 @@ import { WinnerScreen } from './components/WinnerScreen';
 import { builtInGamePacks, createPackFromMarkdown, resolvePersistedPack, type PackBundle } from './lib/gamePacks';
 import {
   DEFAULT_CHALLENGE_TIME_SECONDS,
-  applyManualTeamScore,
+  applyManualAllMembersScore,
+  applyManualMemberScore,
   applyTwist,
   assignMemberToTeam,
   awardPoints,
@@ -447,9 +448,12 @@ function App() {
               return reverted;
             })
           }
-          onAdjustTeamScore={(teamId, delta) =>
+          onAdjustManualScore={(teamId, targetId, delta) =>
             setEventState((current) => {
-              const result = applyManualTeamScore(current, teamId, delta);
+              const result =
+                targetId === 'all'
+                  ? applyManualAllMembersScore(current, teamId, delta)
+                  : applyManualMemberScore(current, teamId, targetId, delta);
               setUndoAction(result.undoAction);
               return result.state;
             })

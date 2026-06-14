@@ -209,11 +209,14 @@ export function applyManualTeamScore(
   teamId: string,
   points: number,
 ): { state: EventState; undoAction: UndoAction } {
+  const targetTeam = state.teams.find((team) => team.id === teamId);
+  const previousTeamScore = targetTeam?.score ?? 0;
+
   return {
     state: {
       ...state,
       teams: state.teams.map((team) =>
-        team.id === teamId ? { ...team, score: Math.max(0, team.score + points) } : team,
+        team.id === teamId ? { ...team, score: team.score + points } : team,
       ),
       lastUpdatedAt: now(),
     },
@@ -221,6 +224,97 @@ export function applyManualTeamScore(
       type: 'manual_score_adjustment',
       teamId,
       points,
+      previousTeamScore,
+    },
+  };
+}
+
+export function applyManualMemberScore(
+  state: EventState,
+  teamId: string,
+  memberId: string,
+  points: number,
+): { state: EventState; undoAction: UndoAction } {
+  const targetTeam = state.teams.find((team) => team.id === teamId);
+  const targetMember = state.members.find((member) => member.id === memberId);
+  const previousTeamScore = targetTeam?.score ?? 0;
+  const previousMemberScore = targetMember?.points ?? 0;
+
+  return {
+    state: {
+      ...state,
+      teams: state.teams.map((team) =>
+        team.id === teamId ? { ...team, score: team.score + points } : team,
+      ),
+      members: state.members.map((member) =>
+        member.id === memberId ? { ...member, points: member.points + points } : member,
+      ),
+      lastUpdatedAt: now(),
+    },
+    undoAction: {
+      type: 'manual_score_adjustment',
+      teamId,
+      memberId,
+      points,
+      previousTeamScore,
+      previousMemberScore,
+    },
+  };
+}
+
+export function applyManualAllMembersScore(
+  state: EventState,
+  teamId: string,
+  points: number,
+): { state: EventState; undoAction: UndoAction } {
+  const teamMembers = state.members.filter((member) => member.teamId === teamId);
+  const previousTeam = state.teams.find((team) => team.id === teamId);
+  const previousMemberScores = teamMembers.map((member) => ({ memberId: member.id, points: member.points }));
+  const memberCount = teamMembers.length;
+
+  if (!previousTeam || memberCount === 0) {
+    return {
+      state,
+      undoAction: {
+        type: 'manual_score_adjustment',
+        teamId,
+        points,
+      },
+    };
+  }
+
+  const baseDelta = Math.trunc(points / memberCount);
+  let remainder = points - baseDelta * memberCount;
+
+  const memberAdjustments = teamMembers.map((member) => {
+    const extra = remainder === 0 ? 0 : remainder > 0 ? 1 : -1;
+    if (remainder !== 0) {
+      remainder += remainder > 0 ? -1 : 1;
+    }
+    return {
+      memberId: member.id,
+      delta: baseDelta + extra,
+    };
+  });
+
+  return {
+    state: {
+      ...state,
+      teams: state.teams.map((team) =>
+        team.id === teamId ? { ...team, score: team.score + points } : team,
+      ),
+      members: state.members.map((member) => {
+        const adjustment = memberAdjustments.find((entry) => entry.memberId === member.id);
+        return adjustment ? { ...member, points: member.points + adjustment.delta } : member;
+      }),
+      lastUpdatedAt: now(),
+    },
+    undoAction: {
+      type: 'manual_score_adjustment',
+      teamId,
+      points,
+      previousTeamScore: previousTeam.score,
+      previousMemberScores,
     },
   };
 }
@@ -468,8 +562,34 @@ export function undoLastAction(state: EventState, undoAction: UndoAction | null)
       return {
         ...state,
         teams: state.teams.map((team) =>
-          team.id === undoAction.teamId ? { ...team, score: Math.max(0, team.score - undoAction.points) } : team,
+          team.id === undoAction.teamId
+            ? {
+                ...team,
+                score:
+                  typeof undoAction.previousTeamScore === 'number'
+                    ? undoAction.previousTeamScore
+                    : Math.max(0, team.score - (undoAction.points ?? 0)),
+              }
+            : team,
         ),
+        members: undoAction.memberId
+          ? state.members.map((member) =>
+              member.id === undoAction.memberId
+                ? {
+                    ...member,
+                    points:
+                      typeof undoAction.previousMemberScore === 'number'
+                        ? undoAction.previousMemberScore
+                        : Math.max(0, member.points - (undoAction.points ?? 0)),
+                  }
+                : member,
+            )
+          : undoAction.previousMemberScores
+            ? state.members.map((member) => {
+                const snapshot = undoAction.previousMemberScores?.find((entry) => entry.memberId === member.id);
+                return snapshot ? { ...member, points: snapshot.points } : member;
+              })
+          : state.members,
         lastUpdatedAt: now(),
       };
     case 'complete_challenge':

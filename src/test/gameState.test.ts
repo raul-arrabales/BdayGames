@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import rawPack from '../content/fiesta-cumple.es.md?raw';
 import { parseGamePack } from '../lib/content';
 import {
+  applyManualAllMembersScore,
   applyTwist,
+  applyManualTeamScore,
+  applyManualMemberScore,
   assignMemberToTeam,
   awardPoints,
   computeWinner,
@@ -72,6 +75,70 @@ describe('game state helpers', () => {
     const reverted = undoLastAction(result.state, result.undoAction);
     expect(reverted.teams[0].score).toBe(0);
     expect(reverted.members[0].points).toBe(0);
+  });
+
+  it('applies a manual team score correction and supports undo', () => {
+    const { state } = seededState();
+    const team = state.teams[0];
+    const adjustedState = {
+      ...state,
+      teams: state.teams.map((entry, index) => (index === 0 ? { ...entry, score: 20 } : entry)),
+    };
+
+    const result = applyManualTeamScore(adjustedState, team.id, -50);
+    expect(result.state.teams[0].score).toBe(-30);
+
+    const reverted = undoLastAction(result.state, result.undoAction);
+    expect(reverted.teams[0].score).toBe(20);
+  });
+
+  it('applies a manual member score correction and supports undo', () => {
+    const { state } = seededState();
+    const member = state.members[0];
+    const team = state.teams[0];
+    const adjustedState = {
+      ...state,
+      teams: state.teams.map((entry, index) => (index === 0 ? { ...entry, score: 10 } : entry)),
+      members: state.members.map((entry, index) => (index === 0 ? { ...entry, points: 8 } : entry)),
+    };
+
+    const result = applyManualMemberScore(adjustedState, team.id, member.id, -30);
+    expect(result.state.teams[0].score).toBe(-20);
+    expect(result.state.members[0].points).toBe(-22);
+
+    const reverted = undoLastAction(result.state, result.undoAction);
+    expect(reverted.teams[0].score).toBe(10);
+    expect(reverted.members[0].points).toBe(8);
+  });
+
+  it('splits a manual correction across all team members and supports undo', () => {
+    const { state } = seededState();
+    const team = state.teams[0];
+    const firstMember = state.members[0];
+    const secondMember = createMember('Elia');
+    const thirdMember = createMember('Noa');
+    const teamMembers = [
+      { ...firstMember, teamId: team.id, points: 10 },
+      { ...secondMember, teamId: team.id, points: 5 },
+      { ...thirdMember, teamId: team.id, points: 1 },
+    ];
+    const adjustedState = {
+      ...state,
+      teams: state.teams.map((entry, index) => (index === 0 ? { ...entry, score: 16 } : entry)),
+      members: [...teamMembers, ...state.members.slice(3)],
+    };
+
+    const result = applyManualAllMembersScore(adjustedState, team.id, 7);
+    expect(result.state.teams[0].score).toBe(23);
+    expect(result.state.members[0].points).toBe(13);
+    expect(result.state.members[1].points).toBe(7);
+    expect(result.state.members[2].points).toBe(3);
+
+    const reverted = undoLastAction(result.state, result.undoAction);
+    expect(reverted.teams[0].score).toBe(16);
+    expect(reverted.members[0].points).toBe(10);
+    expect(reverted.members[1].points).toBe(5);
+    expect(reverted.members[2].points).toBe(1);
   });
 
   it('applies twist effects and ranks winners', () => {

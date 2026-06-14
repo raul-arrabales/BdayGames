@@ -116,7 +116,11 @@ export type UndoAction =
   | {
       type: 'manual_score_adjustment';
       teamId: string;
-      points: number;
+      points?: number;
+      previousTeamScore?: number;
+      memberId?: string;
+      previousMemberScore?: number;
+      previousMemberScores?: Array<{ memberId: string; points: number }>;
     }
   | {
       type: 'complete_challenge';
