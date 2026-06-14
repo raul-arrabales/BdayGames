@@ -40,6 +40,7 @@ export const strings = {
     markCompleted: 'Marcar como completado',
     revealTwist: 'Carta sorpresa',
     applyTwist: 'Aplicar efecto',
+    cancel: 'Cancelar',
     timer: 'Temporizador',
     points: 'Puntos',
     customAdjustment: 'Correccion personalizada',

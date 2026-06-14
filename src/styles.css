@@ -871,6 +871,61 @@ input[type="color"]::-moz-color-swatch {
   background: rgba(255, 255, 255, 0.07);
 }
 
+.twist-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(5, 8, 20, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.twist-modal {
+  width: min(34rem, 100%);
+  max-height: calc(100vh - 2.5rem);
+  overflow: auto;
+}
+
+.twist-modal-card {
+  display: grid;
+  gap: 0.95rem;
+  padding: 1.2rem 1.25rem;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 211, 61, 0.16), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+.twist-modal-card h3 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.3rem);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.twist-modal-card p {
+  margin: 0;
+  color: rgba(255, 247, 237, 0.9);
+  font-size: 1.02rem;
+}
+
+.twist-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.twist-modal-actions .primary-button,
+.twist-modal-actions .ghost-button {
+  min-width: 10.5rem;
+}
+
 .timer-ring {
   position: relative;
   width: 12rem;

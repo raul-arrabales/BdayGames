@@ -86,6 +86,7 @@ export function DashboardScreen({
 }: DashboardScreenProps) {
   const [rollingTeamId, setRollingTeamId] = useState<string | null>(null);
   const [isRollingTeam, setIsRollingTeam] = useState(false);
+  const [isTwistModalOpen, setIsTwistModalOpen] = useState(false);
   const rollTimerRef = useRef<number | null>(null);
   const timerProgress = timerDurationSeconds > 0 ? timerSecondsLeft / timerDurationSeconds : 0;
   const timerEmptyProgress = 1 - timerProgress;
@@ -134,6 +135,45 @@ export function DashboardScreen({
     setIsRollingTeam(false);
   }, [activeChallengeChoiceTeamId]);
 
+  useEffect(() => {
+    if (activeTwist) {
+      setIsTwistModalOpen(true);
+      return;
+    }
+
+    setIsTwistModalOpen(false);
+  }, [activeTwist]);
+
+  useEffect(() => {
+    if (!isTwistModalOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsTwistModalOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isTwistModalOpen]);
+
+  const openTwistModal = () => {
+    if (activeTwist) {
+      setIsTwistModalOpen(true);
+      return;
+    }
+
+    onRevealTwist();
+  };
+
+  const applyTwistAndClose = () => {
+    onApplyTwist();
+    setIsTwistModalOpen(false);
+  };
+
   const rollForTeam = () => {
     if (!awaitingPreQuestionTeam || rollTimerRef.current !== null || teams.length === 0) {
       return;
@@ -181,7 +221,7 @@ export function DashboardScreen({
             <h2>{copy.dashboardTitle}</h2>
           </div>
           <div className="action-row">
-            <button className="secondary-button" onClick={onRevealTwist}>
+            <button className="secondary-button" onClick={openTwistModal}>
               {copy.randomTwist}
             </button>
             <button className="ghost-button" disabled={!canUndo} onClick={onUndo}>
@@ -405,14 +445,37 @@ export function DashboardScreen({
           </div>
         )}
 
-        {activeTwist ? (
-          <div className="twist-banner">
-            <p className="eyebrow">{copy.surprise}</p>
-            <h3>{activeTwist.title}</h3>
-            <p>{activeTwist.description}</p>
-            <button className="primary-button" onClick={onApplyTwist}>
-              {copy.applyTwist}
-            </button>
+        {activeTwist && isTwistModalOpen ? (
+          <div
+            className="twist-modal-backdrop"
+            role="presentation"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                setIsTwistModalOpen(false);
+              }
+            }}
+          >
+            <section
+              aria-describedby="twist-modal-description"
+              aria-labelledby="twist-modal-title"
+              aria-modal="true"
+              className="twist-modal"
+              role="dialog"
+            >
+              <div className="twist-modal-card">
+                <p className="eyebrow">{copy.surprise}</p>
+                <h3 id="twist-modal-title">{activeTwist.title}</h3>
+                <p id="twist-modal-description">{activeTwist.description}</p>
+                <div className="twist-modal-actions">
+                  <button className="primary-button" onClick={applyTwistAndClose}>
+                    {copy.applyTwist}
+                  </button>
+                  <button className="ghost-button" onClick={() => setIsTwistModalOpen(false)}>
+                    {copy.cancel}
+                  </button>
+                </div>
+              </div>
+            </section>
           </div>
         ) : null}
       </section>

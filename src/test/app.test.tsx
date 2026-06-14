@@ -452,4 +452,48 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Ver solucion' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Iniciar' })).toBeDisabled();
   });
+
+  it('shows the random twist in a centered modal and allows canceling or applying it', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const twist = pack.twists[0];
+    const state = createInitialState(pack);
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          activeTwistId: twist.id,
+          revealedTwists: [{ cardId: twist.id, applied: false, appliedAtRound: state.currentRound }],
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    const dialog = await screen.findByRole('dialog', { name: twist.title });
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Aplicar efecto' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.queryByRole('dialog', { name: twist.title })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Revelar carta al azar' }));
+    expect(await screen.findByRole('dialog', { name: twist.title })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Aplicar efecto' }));
+
+    expect(screen.queryByRole('dialog', { name: twist.title })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Revelar carta al azar' })).toBeInTheDocument();
+  });
 });
