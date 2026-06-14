@@ -130,4 +130,6 @@ export interface PersistedEvent {
   version: number;
   state: EventState;
   undoAction: UndoAction | null;
+  packMarkdown?: string;
+  packFileName?: string;
 }

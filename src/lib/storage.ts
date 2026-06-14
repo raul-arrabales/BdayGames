@@ -1,8 +1,23 @@
 import type { PersistedEvent } from '../types';
 
 const storageNamespace = import.meta.env.MODE === 'playtest' ? 'playtest' : '';
+export const PERSISTED_EVENT_VERSION = 2;
 
 export const STORAGE_KEY = storageNamespace ? `bday-games-event:${storageNamespace}` : 'bday-games-event';
+
+function isPersistedEvent(value: unknown): value is PersistedEvent {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Partial<PersistedEvent> & { state?: { gamePackId?: unknown; screen?: unknown } };
+
+  return (
+    typeof candidate.version === 'number' &&
+    typeof candidate.state?.gamePackId === 'string' &&
+    typeof candidate.state?.screen === 'string'
+  );
+}
 
 export function loadPersistedEvent(): PersistedEvent | null {
   try {
@@ -10,7 +25,9 @@ export function loadPersistedEvent(): PersistedEvent | null {
     if (!raw) {
       return null;
     }
-    return JSON.parse(raw) as PersistedEvent;
+
+    const parsed = JSON.parse(raw) as unknown;
+    return isPersistedEvent(parsed) ? parsed : null;
   } catch {
     return null;
   }

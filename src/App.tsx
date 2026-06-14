@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DashboardScreen } from './components/DashboardScreen';
 import { DraftScreen } from './components/DraftScreen';
 import { LandingScreen } from './components/LandingScreen';
 import { SetupScreen } from './components/SetupScreen';
 import { WinnerScreen } from './components/WinnerScreen';
-import { parseGamePack, summarizePack } from './lib/content';
+import { builtInGamePacks, createPackFromMarkdown, resolvePersistedPack, type PackBundle } from './lib/gamePacks';
 import {
   applyManualTeamScore,
   applyTwist,
@@ -23,58 +23,88 @@ import {
   undoLastAction,
 } from './lib/gameState';
 import { strings } from './lib/i18n';
-import { clearPersistedEvent, loadPersistedEvent, savePersistedEvent } from './lib/storage';
+import {
+  clearPersistedEvent,
+  loadPersistedEvent,
+  savePersistedEvent,
+  PERSISTED_EVENT_VERSION,
+} from './lib/storage';
 import type { EventState, PersistedEvent, UndoAction } from './types';
-import rawPack from './content/fiesta-cumple.es.md?raw';
 
-const gamePack = parseGamePack(rawPack);
+const defaultPack = builtInGamePacks[0];
+
+interface SavedSession {
+  persisted: PersistedEvent;
+  pack: PackBundle;
+}
 
 function App() {
   const copy = strings.es;
-  const packSummary = useMemo(() => summarizePack(gamePack), []);
-  const [eventState, setEventState] = useState<EventState>(() => createInitialState(gamePack));
+  const [eventState, setEventState] = useState<EventState>(() => createInitialState(defaultPack.pack));
   const [undoAction, setUndoAction] = useState<UndoAction | null>(null);
-  const [hasSavedGame, setHasSavedGame] = useState(false);
+  const [currentPack, setCurrentPack] = useState<PackBundle>(defaultPack);
+  const [savedSession, setSavedSession] = useState<SavedSession | null>(null);
+  const [hasStoredSave, setHasStoredSave] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [landingError, setLandingError] = useState<string | null>(null);
 
   useEffect(() => {
     const persisted = loadPersistedEvent();
-    setHasSavedGame(Boolean(persisted));
+    setHasStoredSave(Boolean(persisted));
+    if (persisted) {
+      const resolvedPack = resolvePersistedPack(persisted);
+      if (resolvedPack) {
+        setSavedSession({ persisted, pack: resolvedPack });
+      } else {
+        setLandingError(copy.missingPack);
+      }
+    }
+
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (eventState.screen === 'landing' && !hasSavedGame) {
+    if (!hydrated || eventState.screen === 'landing') {
       return;
     }
 
     const payload: PersistedEvent = {
-      version: eventState.version,
+      version: PERSISTED_EVENT_VERSION,
       state: eventState,
       undoAction,
+      packMarkdown: currentPack.markdown,
+      packFileName: currentPack.fileName,
     };
     savePersistedEvent(payload);
-    setHasSavedGame(true);
-  }, [eventState, undoAction, hasSavedGame]);
+  }, [currentPack, eventState, hydrated, undoAction]);
 
+  const gamePack = currentPack.pack;
   const activeChallenge = gamePack.challenges.find((challenge) => challenge.id === eventState.activeChallengeId) ?? null;
   const activeTwist = gamePack.twists.find((twist) => twist.id === eventState.activeTwistId) ?? null;
   const currentDraftTeam = eventState.teams.find((team) => team.id === eventState.currentTurnTeamId);
 
-  const startFresh = () => {
+  const startNewGame = (pack: PackBundle) => {
     clearPersistedEvent();
+    setCurrentPack(pack);
     setUndoAction(null);
+    setSavedSession(null);
+    setHasStoredSave(false);
+    setLandingError(null);
     setEventState({
-      ...createInitialState(gamePack),
+      ...createInitialState(pack.pack),
       screen: 'setup',
     });
-    setHasSavedGame(false);
   };
 
   const resumeSavedGame = () => {
-    const persisted = loadPersistedEvent();
-    if (persisted) {
-      setEventState(persisted.state);
-      setUndoAction(persisted.undoAction);
+    if (!savedSession) {
+      return;
     }
+
+    setCurrentPack(savedSession.pack);
+    setUndoAction(savedSession.persisted.undoAction);
+    setLandingError(null);
+    setEventState(savedSession.persisted.state);
   };
 
   const updateState = (updater: (current: EventState) => EventState) => {
@@ -126,6 +156,38 @@ function App() {
     });
   };
 
+  const startBuiltInPack = (packId: string) => {
+    const pack = builtInGamePacks.find((entry) => entry.pack.id === packId);
+    if (!pack) {
+      setLandingError(copy.missingPack);
+      return;
+    }
+
+    startNewGame(pack);
+  };
+
+  const uploadPack = async (file: File) => {
+    try {
+      const markdown = await file.text();
+      const pack = createPackFromMarkdown(markdown, file.name);
+      startNewGame(pack);
+    } catch {
+      setLandingError(copy.invalidPack);
+    }
+  };
+
+  const clearSavedGame = () => {
+    clearPersistedEvent();
+    setSavedSession(null);
+    setHasStoredSave(false);
+    setUndoAction(null);
+    setLandingError(null);
+    setEventState((current) => ({
+      ...createInitialState(currentPack.pack),
+      screen: 'landing',
+    }));
+  };
+
   return (
     <main className="app-shell">
       <div className="background-glow background-glow-a" />
@@ -134,12 +196,14 @@ function App() {
       {eventState.screen === 'landing' ? (
         <LandingScreen
           copy={copy}
-          hasSavedGame={hasSavedGame}
-          pack={gamePack}
-          packSummary={packSummary}
-          onStart={startFresh}
+          builtInPacks={builtInGamePacks}
+          hasSavedGame={hasStoredSave}
+          landingError={landingError}
+          savedPack={savedSession?.pack ?? null}
+          onChoosePack={startBuiltInPack}
+          onUploadPack={uploadPack}
           onResume={resumeSavedGame}
-          onReset={startFresh}
+          onReset={clearSavedGame}
         />
       ) : null}
 
@@ -269,7 +333,12 @@ function App() {
       ) : null}
 
       {eventState.screen === 'winner' && eventState.winner ? (
-        <WinnerScreen copy={copy} winner={eventState.winner} teams={eventState.teams} onRestart={startFresh} />
+        <WinnerScreen
+          copy={copy}
+          winner={eventState.winner}
+          teams={eventState.teams}
+          onRestart={() => startNewGame(currentPack)}
+        />
       ) : null}
     </main>
   );
