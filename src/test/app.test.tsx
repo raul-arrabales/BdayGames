@@ -25,6 +25,20 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
   });
 
+  it('can auto-fill a quick two-team setup from the setup screen', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: /Fiesta Familiar de Cumpleanos/ }));
+    expect(await screen.findByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Rellenar prueba 2x4' }));
+
+    expect(await screen.findByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Ningun reto activo' })).toBeInTheDocument();
+    expect(document.querySelectorAll('.score-card')).toHaveLength(2);
+  });
+
   it('offers resume for a saved game and restores the saved flow', async () => {
     const user = userEvent.setup();
     const pack = parseGamePack(rawPack);

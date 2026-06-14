@@ -11,6 +11,25 @@ import type {
 export const APP_STATE_VERSION = 3;
 export const DEFAULT_CHALLENGE_TIME_SECONDS = 90;
 
+const QUICK_SETUP_MEMBER_NAMES = [
+  'Luna',
+  'Mateo',
+  'Noa',
+  'Leo',
+  'Mia',
+  'Iker',
+  'Sara',
+  'Dani',
+  'Nora',
+  'Pablo',
+  'Elia',
+  'Bruno',
+  'Clara',
+  'Tomas',
+  'Vera',
+  'Rita',
+];
+
 function now(): string {
   return new Date().toISOString();
 }
@@ -70,6 +89,79 @@ export function createMember(name = ''): Member {
     teamId: null,
     points: 0,
     isBirthdayPerson: false,
+  };
+}
+
+function pickRandomMemberNames(count: number): string[] {
+  const pool = [...QUICK_SETUP_MEMBER_NAMES];
+  const picked: string[] = [];
+
+  while (picked.length < count && pool.length > 0) {
+    const index = Math.floor(Math.random() * pool.length);
+    const [name] = pool.splice(index, 1);
+    picked.push(name);
+  }
+
+  while (picked.length < count) {
+    picked.push(`Participante ${picked.length + 1}`);
+  }
+
+  return picked;
+}
+
+export function fillQuickSetupTeams(state: EventState): EventState {
+  const [firstTeamSeed, secondTeamSeed] = state.teams;
+  const firstTeam = firstTeamSeed ?? createTeam('Equipo Sol', '#ff6b35');
+  const secondTeam = secondTeamSeed ?? createTeam('Equipo Fiesta', '#00b3ff');
+  const memberNames = pickRandomMemberNames(8);
+
+  const members = memberNames.map((name, index) => ({
+    ...createMember(name),
+    teamId: index < 4 ? firstTeam.id : secondTeam.id,
+    isBirthdayPerson: index === 0,
+  }));
+
+  const firstTeamMembers = members.slice(0, 4).map((member) => member.id);
+  const secondTeamMembers = members.slice(4, 8).map((member) => member.id);
+
+  return {
+    ...state,
+    screen: 'dashboard',
+    teams: [
+      {
+        ...firstTeam,
+        captainId: members[0].id,
+        memberIds: firstTeamMembers,
+        score: 0,
+        skippedTurns: 0,
+      },
+      {
+        ...secondTeam,
+        captainId: members[4].id,
+        memberIds: secondTeamMembers,
+        score: 0,
+        skippedTurns: 0,
+      },
+    ],
+    members,
+    birthdayPersonId: members[0].id,
+    draftOrder: [],
+    draftRound: 1,
+    draftDirection: 'forward',
+    currentTurnTeamId: null,
+    picks: [],
+    currentRound: 1,
+    activeChallengeId: null,
+    challengeAwarded: false,
+    challengeTimerDurationSeconds: DEFAULT_CHALLENGE_TIME_SECONDS,
+    challengeTimerSecondsLeft: DEFAULT_CHALLENGE_TIME_SECONDS,
+    challengeTimerRunning: false,
+    completedChallengeIds: [],
+    revealedTwists: [],
+    activeTwistId: null,
+    activeDoubleRound: false,
+    winner: null,
+    lastUpdatedAt: now(),
   };
 }
 

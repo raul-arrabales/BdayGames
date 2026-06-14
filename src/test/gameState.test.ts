@@ -13,6 +13,7 @@ import {
   createInitialState,
   createMember,
   createTeam,
+  fillQuickSetupTeams,
   initializeDraft,
   pauseChallengeTimer,
   resetChallengeTimer,
@@ -62,6 +63,22 @@ describe('game state helpers', () => {
 
     const afterPick = assignMemberToTeam(started, memberC.id, started.teams[0].id);
     expect(afterPick.currentTurnTeamId).toBe(started.teams[1].id);
+  });
+
+  it('fills a quick test setup with two teams and four members each', () => {
+    const { state } = seededState();
+    const filled = fillQuickSetupTeams(state);
+
+    expect(filled.teams).toHaveLength(2);
+    expect(filled.members).toHaveLength(8);
+    expect(filled.birthdayPersonId).toBe(filled.members[0].id);
+    expect(filled.teams[0].captainId).toBe(filled.members[0].id);
+    expect(filled.teams[1].captainId).toBe(filled.members[4].id);
+    expect(filled.teams[0].memberIds).toHaveLength(4);
+    expect(filled.teams[1].memberIds).toHaveLength(4);
+    expect(filled.members.slice(0, 4).every((member) => member.teamId === filled.teams[0].id)).toBe(true);
+    expect(filled.members.slice(4).every((member) => member.teamId === filled.teams[1].id)).toBe(true);
+    expect(new Set(filled.members.map((member) => member.name)).size).toBe(8);
   });
 
   it('awards points and supports undo', () => {

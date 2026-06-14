@@ -19,6 +19,7 @@ import {
   createInitialState,
   createMember,
   createTeam,
+  fillQuickSetupTeams,
   initializeDraft,
   revealRandomTwist,
   setActiveChallenge,
@@ -362,6 +363,9 @@ function App() {
           teams={eventState.teams}
           members={eventState.members}
           birthdayPersonId={eventState.birthdayPersonId}
+          onAutoFillQuickSetup={() =>
+            updateState((current) => fillQuickSetupTeams(current))
+          }
           onAddTeam={() => updateState((current) => ({ ...current, teams: [...current.teams, createTeam()], lastUpdatedAt: new Date().toISOString() }))}
           onUpdateTeam={(teamId, field, value) =>
             updateState((current) => ({

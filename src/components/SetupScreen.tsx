@@ -7,6 +7,7 @@ interface SetupScreenProps {
   members: Member[];
   birthdayPersonId: string | null;
   onAddTeam: () => void;
+  onAutoFillQuickSetup: () => void;
   onUpdateTeam: (teamId: string, field: 'name' | 'color', value: string) => void;
   onRemoveTeam: (teamId: string) => void;
   onAddMember: () => void;
@@ -24,6 +25,7 @@ export function SetupScreen({
   members,
   birthdayPersonId,
   onAddTeam,
+  onAutoFillQuickSetup,
   onUpdateTeam,
   onRemoveTeam,
   onAddMember,
@@ -39,9 +41,14 @@ export function SetupScreen({
       <div className="panel">
         <div className="panel-header">
           <h2>{copy.setupTitle}</h2>
-          <button className="secondary-button" onClick={onAddTeam}>
-            {copy.addTeam}
-          </button>
+          <div className="panel-actions">
+            <button className="secondary-button" onClick={onAutoFillQuickSetup}>
+              {copy.autoFillQuickSetup}
+            </button>
+            <button className="secondary-button" onClick={onAddTeam}>
+              {copy.addTeam}
+            </button>
+          </div>
         </div>
         <div className="stack">
           {teams.map((team) => (

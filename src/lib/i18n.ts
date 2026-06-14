@@ -25,6 +25,7 @@ export const strings = {
     captain: 'Capitan/a',
     addTeam: 'Agregar equipo',
     addMember: 'Agregar participante',
+    autoFillQuickSetup: 'Rellenar prueba 2x4',
     continueToDraft: 'Ir al draft',
     backToSetup: 'Volver a equipos',
     draftTitle: 'Draft familiar',
