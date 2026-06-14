@@ -68,7 +68,7 @@ describe('App', () => {
   it('shows timer controls for an active challenge', async () => {
     const user = userEvent.setup();
     const pack = parseGamePack(rawPack);
-    const challenge = pack.challenges[0];
+    const challenge = pack.challenges.find((entry) => !entry.preQuestion) ?? pack.challenges[0];
 
     window.localStorage.setItem(
       STORAGE_KEY,
@@ -93,9 +93,10 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
 
-    expect(await screen.findByRole('button', { name: 'Iniciar temporizador' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Pausar temporizador' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Reiniciar temporizador' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Iniciar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pausar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reiniciar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Parar' })).toBeInTheDocument();
     expect(screen.getByLabelText('Volumen')).toBeInTheDocument();
     expect(document.querySelector('.timer-ring.is-warning')).toBeInTheDocument();
   });
@@ -273,7 +274,7 @@ describe('App', () => {
     const user = userEvent.setup();
     const pack = parseGamePack(rawPack);
     const state = createInitialState(pack);
-    const challenge = pack.challenges[0];
+    const challenge = pack.challenges.find((entry) => !entry.preQuestion) ?? pack.challenges[0];
     const firstTeam = state.teams[0];
     const secondTeam = state.teams[1];
     const memberA = { ...createMember('Luna'), teamId: firstTeam.id, points: 0 };
@@ -321,8 +322,9 @@ describe('App', () => {
     expect(firstTeamCard).not.toBeNull();
     await user.click(within(firstTeamCard!).getByRole('button', { name: 'Todo el equipo' }));
 
-    expect(screen.getByText(`${memberA.name}: 50`)).toBeInTheDocument();
-    expect(screen.getByText(`${memberB.name}: 50`)).toBeInTheDocument();
+    const expectedMemberPoints = challenge.points / 2;
+    expect(screen.getByText(`${memberA.name}: ${expectedMemberPoints}`)).toBeInTheDocument();
+    expect(screen.getByText(`${memberB.name}: ${expectedMemberPoints}`)).toBeInTheDocument();
     expect(screen.getByText(`${memberC.name}: 0`)).toBeInTheDocument();
     expect(within(firstTeamCard!).getByRole('button', { name: memberA.name })).toBeDisabled();
     expect(within(firstTeamCard!).getByRole('button', { name: memberB.name })).toBeDisabled();
@@ -332,5 +334,122 @@ describe('App', () => {
     expect(within(secondTeamCard!).getByRole('button', { name: 'Todo el equipo' })).toBeDisabled();
     expect(screen.getByRole('button', { name: memberC.name })).toBeDisabled();
     expect(screen.getByText('Ya se asignaron los puntos de este reto')).toBeInTheDocument();
+  });
+
+  it('resolves a pre-question challenge by choosing a team and an option', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const challenge = pack.challenges[0];
+    const state = createInitialState(pack);
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          activeChallengeId: challenge.id,
+          challengeTimerDurationSeconds: challenge.time,
+          challengeTimerSecondsLeft: challenge.time,
+          challengeTimerRunning: false,
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    expect(screen.getByRole('heading', { name: 'Trivia doble' })).toBeInTheDocument();
+    expect(screen.getByText('Quereis pregunta de ciencias o de literatura?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Equipo Sol' }));
+    await user.click(screen.getByRole('button', { name: 'Ciencias' }));
+
+    expect(screen.getByText('Que planeta se conoce como el planeta rojo?')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Iniciar' })).toBeInTheDocument();
+    expect(document.querySelector('.trivia-question-hero')).toBeInTheDocument();
+  });
+
+  it('reveals the trivia solution after the timer ends', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const challenge = pack.challenges[0];
+    const state = createInitialState(pack);
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          activeChallengeId: challenge.id,
+          activeChallengeChoiceTeamId: state.teams[0].id,
+          activeChallengeChoiceOptionIndex: 0,
+          activeChallengeSolutionRevealed: false,
+          challengeTimerDurationSeconds: challenge.time,
+          challengeTimerSecondsLeft: 0,
+          challengeTimerRunning: false,
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    expect(screen.getByRole('heading', { name: /Que planeta se conoce como el planeta rojo\?/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ver solucion' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Ver solucion' }));
+
+    expect(screen.getByText('Solucion')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Marte' })).toBeInTheDocument();
+  });
+
+  it('can stop the timer early and expose the solution button', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const challenge = pack.challenges[0];
+    const state = createInitialState(pack);
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          activeChallengeId: challenge.id,
+          activeChallengeChoiceTeamId: state.teams[0].id,
+          activeChallengeChoiceOptionIndex: 0,
+          activeChallengeSolutionRevealed: false,
+          challengeTimerDurationSeconds: challenge.time,
+          challengeTimerSecondsLeft: challenge.time,
+          challengeTimerRunning: true,
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    await user.click(screen.getByRole('button', { name: 'Parar' }));
+
+    expect(screen.getByRole('button', { name: 'Ver solucion' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Iniciar' })).toBeDisabled();
   });
 });

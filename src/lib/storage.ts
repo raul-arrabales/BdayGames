@@ -2,7 +2,7 @@ import type { PersistedEvent } from '../types';
 import { APP_STATE_VERSION, DEFAULT_CHALLENGE_TIME_SECONDS } from './gameState';
 
 const storageNamespace = import.meta.env.MODE === 'playtest' ? 'playtest' : '';
-export const PERSISTED_EVENT_VERSION = 4;
+export const PERSISTED_EVENT_VERSION = 6;
 
 export const STORAGE_KEY = storageNamespace ? `bday-games-event:${storageNamespace}` : 'bday-games-event';
 
@@ -35,6 +35,13 @@ function normalizePersistedState(persisted: PersistedEvent): PersistedEvent {
     state: {
       ...state,
       version: Number.isFinite(state.version) ? Math.max(APP_STATE_VERSION, Math.floor(state.version)) : APP_STATE_VERSION,
+      activeChallengeChoiceTeamId:
+        typeof state.activeChallengeChoiceTeamId === 'string' ? state.activeChallengeChoiceTeamId : null,
+      activeChallengeChoiceOptionIndex:
+        typeof state.activeChallengeChoiceOptionIndex === 'number' && Number.isFinite(state.activeChallengeChoiceOptionIndex)
+          ? Math.max(0, Math.floor(state.activeChallengeChoiceOptionIndex))
+          : null,
+      activeChallengeSolutionRevealed: Boolean(state.activeChallengeSolutionRevealed),
       challengeAwarded: Boolean(state.activeChallengeId && state.challengeAwarded),
       challengeTimerDurationSeconds: duration,
       challengeTimerSecondsLeft: Math.min(secondsLeft, duration),

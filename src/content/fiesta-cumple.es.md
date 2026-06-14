@@ -12,8 +12,48 @@ summary: Un set inicial de retos, giros y reglas para dirigir una fiesta de cump
 - Gana el equipo con mayor puntuacion al cerrar la ultima ronda.
 
 ## Retos:trivia
-- title: Cancion secreta
-  prompt: Adivina la cancion familiar con solo tres palabras de pista.
+- title: Trivia doble
+  prompt: Responde la pregunta correcta segun la opcion elegida.
+  multipleChoice:
+    options:
+      - Marte
+      - Venus
+      - Jupiter
+      - Saturno
+    answerIndex: 0
+  preQuestion:
+    prompt: Quereis pregunta de ciencias o de literatura?
+    options:
+      - label: Ciencias
+        challenge:
+          prompt: Que planeta se conoce como el planeta rojo?
+          multipleChoice:
+            options:
+              - Marte
+              - Venus
+              - Jupiter
+              - Saturno
+            answerIndex: 0
+          rules:
+            - Responde un unico representante.
+          points: 100
+          time: 60
+      - label: Literatura
+        challenge:
+          prompt: Quien escribio Don Quijote de la Mancha?
+          multipleChoice:
+            options:
+              - Miguel de Cervantes
+              - Federico Garcia Lorca
+              - Pablo Neruda
+              - Benito Perez Galdos
+            answerIndex: 0
+          rules:
+            - Responde un unico representante.
+          points: 100
+          time: 60
+  # La variante base solo se usa si se muestra el reto sin resolver la pregunta previa.
+  # El MC normalmente elegira una de las opciones anteriores.
   rules:
     - Un representante responde por turno.
     - Si falla, rebote para el otro equipo.

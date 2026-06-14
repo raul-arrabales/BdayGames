@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import rawPack from '../content/fiesta-cumple.es.md?raw';
-import { parseGamePack } from '../lib/content';
+import { parseGamePack, resolveChallengeCard } from '../lib/content';
 import {
   applyManualAllMembersScore,
   applyTwist,
   applyManualTeamScore,
   applyManualMemberScore,
+  clearChallengePreQuestionSelection,
   assignMemberToTeam,
   awardPoints,
   awardTeamPoints,
@@ -15,10 +16,13 @@ import {
   createTeam,
   fillQuickSetupTeams,
   initializeDraft,
+  completeChallenge,
   pauseChallengeTimer,
   resetChallengeTimer,
   setActiveChallengeWithDuration,
   setBirthdayPerson,
+  selectChallengePreQuestionOption,
+  selectChallengePreQuestionTeam,
   startChallengeTimer,
   tickChallengeTimer,
   undoLastAction,
@@ -227,5 +231,48 @@ describe('game state helpers', () => {
     const reset = resetChallengeTimer(paused);
     expect(reset.challengeTimerSecondsLeft).toBe(45);
     expect(reset.challengeTimerRunning).toBe(false);
+  });
+
+  it('parses trivia multiple choice options from the pack', () => {
+    const { pack } = seededState();
+
+    expect(pack.challenges[0].multipleChoice?.options).toHaveLength(4);
+    expect(pack.challenges[0].multipleChoice?.answerIndex).toBe(0);
+  });
+
+  it('resolves pre-question challenge branches and preserves undo state', () => {
+    const { pack, state } = seededState();
+    const challenge = pack.challenges[0];
+    expect(challenge.preQuestion).toBeDefined();
+
+    const selectedTeamState = selectChallengePreQuestionTeam(
+      setActiveChallengeWithDuration(state, challenge.id, challenge.time),
+      state.teams[0].id,
+    );
+    expect(selectedTeamState.activeChallengeChoiceTeamId).toBe(state.teams[0].id);
+
+    const clearedState = clearChallengePreQuestionSelection(selectedTeamState);
+    expect(clearedState.activeChallengeChoiceTeamId).toBeNull();
+    expect(clearedState.activeChallengeChoiceOptionIndex).toBeNull();
+    expect(clearedState.activeChallengeSolutionRevealed).toBe(false);
+
+    const resolvedState = selectChallengePreQuestionOption(selectedTeamState, 0, challenge.time);
+    expect(resolvedState.activeChallengeChoiceOptionIndex).toBe(0);
+    expect(resolvedState.activeChallengeSolutionRevealed).toBe(false);
+
+    const resolvedChallenge = resolveChallengeCard(challenge, resolvedState.activeChallengeChoiceOptionIndex);
+    expect(resolvedChallenge.prompt).toContain('planeta');
+
+    const finished = {
+      ...resolvedState,
+      activeChallengeChoiceTeamId: state.teams[1].id,
+      activeChallengeChoiceOptionIndex: 1,
+    };
+    const completion = completeChallenge(finished);
+    expect(completion.state.activeChallengeId).toBeNull();
+    const reverted = undoLastAction(completion.state, completion.undoAction);
+    expect(reverted.activeChallengeId).toBe(challenge.id);
+    expect(reverted.activeChallengeChoiceTeamId).toBe(state.teams[1].id);
+    expect(reverted.activeChallengeChoiceOptionIndex).toBe(1);
   });
 });

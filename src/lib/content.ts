@@ -2,6 +2,9 @@ import YAML from 'yaml';
 import type {
   ChallengeCard,
   ChallengeCategory,
+  ChallengePreQuestion,
+  ChallengeMultipleChoice,
+  ChallengeVariant,
   GamePack,
   TwistCard,
   TwistEffectType,
@@ -16,6 +19,39 @@ interface FrontmatterShape {
 }
 
 const challengePattern = /^- title:\s*(.+)$/gm;
+
+interface ChallengeDocumentShape {
+  title?: string;
+  prompt?: string;
+  rules?: string[];
+  points?: number;
+  time?: number;
+  multipleChoice?: ChallengeMultipleChoiceShape;
+  preQuestion?: {
+    prompt?: string;
+    options?: ChallengeOptionShape[];
+  };
+}
+
+interface ChallengeOptionShape {
+  label: string;
+  challenge: ChallengeVariant;
+}
+
+interface ChallengeMultipleChoiceShape {
+  options?: string[];
+  answerIndex?: number;
+  explanation?: string;
+}
+
+interface NormalizedChallengeFields {
+  title: string;
+  prompt: string;
+  rules: string[];
+  points: number;
+  time: number;
+  multipleChoice?: ChallengeMultipleChoice;
+}
 
 const categoryMap: Record<string, ChallengeCategory> = {
   trivia: 'trivia',
@@ -72,34 +108,126 @@ function parseListItems(block: string): string[] {
     .map((line) => line.replace(/^- /, '').trim());
 }
 
+function isFinitePositiveNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+function normalizeVariant(base: ChallengeVariant, variant: ChallengeVariant): NormalizedChallengeFields {
+  return {
+    title: variant.title ?? base.title ?? '',
+    prompt: variant.prompt,
+    rules: variant.rules ?? base.rules ?? [],
+    points: isFinitePositiveNumber(variant.points) ? Math.floor(variant.points) : base.points ?? 100,
+    time: isFinitePositiveNumber(variant.time) ? Math.floor(variant.time) : base.time ?? DEFAULT_CHALLENGE_TIME_SECONDS,
+    multipleChoice: variant.multipleChoice ?? base.multipleChoice,
+  };
+}
+
+function parseMultipleChoice(
+  parsed: ChallengeMultipleChoiceShape | undefined,
+  challengeTitle: string,
+): ChallengeMultipleChoice | undefined {
+  if (!parsed) {
+    return undefined;
+  }
+
+  const options = parsed.options ?? [];
+  const answerIndex = parsed.answerIndex;
+
+  if (!Array.isArray(options) || options.length !== 4) {
+    throw new Error(`Challenge multiple choice for "${challengeTitle}" must have exactly four options.`);
+  }
+
+  if (
+    typeof answerIndex !== 'number' ||
+    !Number.isInteger(answerIndex) ||
+    answerIndex < 0 ||
+    answerIndex > 3
+  ) {
+    throw new Error(`Challenge multiple choice answer index for "${challengeTitle}" must be between 0 and 3.`);
+  }
+
+  return {
+    options: options.map((option) => option.trim()),
+    answerIndex,
+    explanation: parsed.explanation?.trim() || undefined,
+  };
+}
+
+function parsePreQuestion(
+  parsed: ChallengeDocumentShape,
+  baseChallenge: ChallengeVariant,
+): ChallengePreQuestion | undefined {
+  if (!parsed.preQuestion) {
+    return undefined;
+  }
+
+  const prompt = parsed.preQuestion.prompt?.trim();
+  const options = parsed.preQuestion.options ?? [];
+
+  if (!prompt) {
+    throw new Error('Challenge pre-question prompt is missing.');
+  }
+
+  if (!Array.isArray(options) || options.length === 0) {
+    throw new Error(`Challenge pre-question options are missing for "${baseChallenge.title}".`);
+  }
+
+  return {
+    prompt,
+    options: options.map((option, index) => {
+      const label = option.label?.trim();
+      const optionChallenge = option.challenge;
+
+      if (!label) {
+        throw new Error(`Challenge pre-question option label is missing at index ${index}.`);
+      }
+
+      if (!optionChallenge?.prompt?.trim()) {
+        throw new Error(`Challenge pre-question option "${label}" is missing a prompt.`);
+      }
+
+      return {
+        label,
+        challenge: normalizeVariant(baseChallenge, optionChallenge),
+      };
+    }),
+  };
+}
+
 function parseChallenges(block: string, category: ChallengeCategory): ChallengeCard[] {
   const normalized = block.trim();
   if (!normalized) {
     return [];
   }
 
-  const documents = (YAML.parse(normalized) as Array<{
-    title: string;
-    prompt: string;
-    rules?: string[];
-    points?: number;
-    time?: number;
-  }>) ?? [];
+  const documents = (YAML.parse(normalized) as ChallengeDocumentShape[]) ?? [];
 
   return documents.map((parsed, index) => {
-    const time =
-      typeof parsed.time === 'number' && Number.isFinite(parsed.time) && parsed.time > 0
-        ? Math.floor(parsed.time)
-        : DEFAULT_CHALLENGE_TIME_SECONDS;
+    if (!parsed.title?.trim() || !parsed.prompt?.trim()) {
+      throw new Error(`Challenge "${index + 1}" is missing required fields.`);
+    }
+
+    const challenge: ChallengeVariant = {
+      title: parsed.title.trim(),
+      prompt: parsed.prompt.trim(),
+      rules: parsed.rules ?? [],
+      points: parsed.points,
+      time: parsed.time,
+      multipleChoice: parseMultipleChoice(parsed.multipleChoice, parsed.title.trim()),
+    };
+    const normalizedChallenge = normalizeVariant(challenge, challenge);
 
     return {
       id: `${category}-${index + 1}`,
       category,
-      title: parsed.title,
-      prompt: parsed.prompt,
-      rules: parsed.rules ?? [],
-      points: parsed.points ?? 100,
-      time,
+      title: normalizedChallenge.title,
+      prompt: normalizedChallenge.prompt,
+      rules: normalizedChallenge.rules,
+      points: normalizedChallenge.points,
+      time: normalizedChallenge.time,
+      multipleChoice: normalizedChallenge.multipleChoice,
+      preQuestion: parsePreQuestion(parsed, normalizedChallenge),
     };
   });
 }
@@ -165,4 +293,27 @@ export function summarizePack(pack: GamePack): string {
 
 export function hasChallenges(markdown: string): boolean {
   return challengePattern.test(markdown);
+}
+
+export function resolveChallengeCard(challenge: ChallengeCard, optionIndex: number | null): ChallengeCard {
+  if (optionIndex === null || !challenge.preQuestion) {
+    return challenge;
+  }
+
+  const selectedOption = challenge.preQuestion.options[optionIndex];
+  if (!selectedOption) {
+    return challenge;
+  }
+
+  return {
+    ...challenge,
+    ...selectedOption.challenge,
+    preQuestion: undefined,
+    title: selectedOption.challenge.title ?? challenge.title,
+    prompt: selectedOption.challenge.prompt,
+    rules: selectedOption.challenge.rules ?? challenge.rules,
+    points: selectedOption.challenge.points ?? challenge.points,
+    time: selectedOption.challenge.time ?? challenge.time,
+    multipleChoice: selectedOption.challenge.multipleChoice ?? challenge.multipleChoice,
+  };
 }

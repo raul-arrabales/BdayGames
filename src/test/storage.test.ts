@@ -43,6 +43,9 @@ describe('storage', () => {
       state: {
         gamePackId: 'fiesta-cumple',
         challengeAwarded: false,
+        activeChallengeChoiceTeamId: null,
+        activeChallengeChoiceOptionIndex: null,
+        activeChallengeSolutionRevealed: false,
         challengeTimerDurationSeconds: 90,
         challengeTimerSecondsLeft: 90,
         challengeTimerRunning: false,

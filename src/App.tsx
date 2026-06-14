@@ -5,8 +5,10 @@ import { LandingScreen } from './components/LandingScreen';
 import { SetupScreen } from './components/SetupScreen';
 import { WinnerScreen } from './components/WinnerScreen';
 import { builtInGamePacks, createPackFromMarkdown, resolvePersistedPack, type PackBundle } from './lib/gamePacks';
+import { resolveChallengeCard } from './lib/content';
 import {
   DEFAULT_CHALLENGE_TIME_SECONDS,
+  clearChallengePreQuestionSelection,
   applyManualAllMembersScore,
   applyManualMemberScore,
   applyTwist,
@@ -27,6 +29,10 @@ import {
   setBirthdayPerson,
   pauseChallengeTimer,
   resetChallengeTimer,
+  stopChallengeTimer,
+  selectChallengePreQuestionOption,
+  selectChallengePreQuestionTeam,
+  toggleChallengeSolutionReveal,
   startChallengeTimer,
   tickChallengeTimer,
   undoLastAction,
@@ -171,6 +177,9 @@ function App() {
 
   const gamePack = currentPack.pack;
   const activeChallenge = gamePack.challenges.find((challenge) => challenge.id === eventState.activeChallengeId) ?? null;
+  const activeChallengeResolved = activeChallenge
+    ? resolveChallengeCard(activeChallenge, eventState.activeChallengeChoiceOptionIndex)
+    : null;
   const activeTwist = gamePack.twists.find((twist) => twist.id === eventState.activeTwistId) ?? null;
   const currentDraftTeam = eventState.teams.find((team) => team.id === eventState.currentTurnTeamId);
   const hasCompletedAllRounds =
@@ -195,13 +204,14 @@ function App() {
       return;
     }
 
+    const resumedState = normalizeTimerState(savedSession.persisted.state, savedSession.pack.pack);
     setCurrentPack(savedSession.pack);
     setUndoAction(savedSession.persisted.undoAction);
     setLandingError(null);
-    setEventState(normalizeTimerState(savedSession.persisted.state, savedSession.pack.pack));
+    setEventState(resumedState);
     timerSnapshotRef.current = {
-      challengeId: savedSession.persisted.state.activeChallengeId,
-      secondsLeft: savedSession.persisted.state.challengeTimerSecondsLeft,
+      challengeId: resumedState.activeChallengeId,
+      secondsLeft: resumedState.challengeTimerSecondsLeft,
     };
   };
 
@@ -296,7 +306,8 @@ function App() {
       return state;
     }
 
-    const duration = challenge.time ?? DEFAULT_CHALLENGE_TIME_SECONDS;
+    const resolvedChallenge = resolveChallengeCard(challenge, state.activeChallengeChoiceOptionIndex);
+    const duration = resolvedChallenge.time ?? challenge.time ?? DEFAULT_CHALLENGE_TIME_SECONDS;
     const secondsLeft = Math.min(
       duration,
       Math.max(0, state.challengeTimerSecondsLeft ?? duration),
@@ -438,6 +449,10 @@ function App() {
           round={eventState.currentRound}
           currentRoundChallengeCount={gamePack.challenges.length}
           activeChallenge={activeChallenge}
+          resolvedChallenge={activeChallengeResolved}
+          activeChallengeChoiceTeamId={eventState.activeChallengeChoiceTeamId}
+          activeChallengeChoiceOptionIndex={eventState.activeChallengeChoiceOptionIndex}
+          activeChallengeSolutionRevealed={eventState.activeChallengeSolutionRevealed}
           timerDurationSeconds={eventState.challengeTimerDurationSeconds}
           timerSecondsLeft={eventState.challengeTimerSecondsLeft}
           timerRunning={eventState.challengeTimerRunning}
@@ -455,6 +470,37 @@ function App() {
               return challenge
                 ? setActiveChallengeWithDuration(current, challengeId, challenge.time ?? DEFAULT_CHALLENGE_TIME_SECONDS)
                 : setActiveChallenge(current, challengeId);
+            })
+          }
+          onSelectPreQuestionTeam={(teamId) =>
+            updateState((current) => selectChallengePreQuestionTeam(current, teamId))
+          }
+          onClearPreQuestionSelection={() =>
+            updateState((current) => clearChallengePreQuestionSelection(current))
+          }
+          onSelectPreQuestionOption={(optionIndex) =>
+            setEventState((current) => {
+              const challenge = gamePack.challenges.find((entry) => entry.id === current.activeChallengeId);
+              if (!challenge) {
+                return current;
+              }
+
+              const option = challenge.preQuestion?.options[optionIndex];
+              if (!option) {
+                return current;
+              }
+
+              const resolvedChallenge = resolveChallengeCard(challenge, optionIndex);
+              const result = selectChallengePreQuestionOption(
+                current,
+                optionIndex,
+                resolvedChallenge.time ?? challenge.time ?? DEFAULT_CHALLENGE_TIME_SECONDS,
+              );
+              timerSnapshotRef.current = {
+                challengeId: result.activeChallengeId,
+                secondsLeft: result.challengeTimerSecondsLeft,
+              };
+              return result;
             })
           }
           onAwardPoints={(teamId, memberId, points) =>
@@ -487,6 +533,8 @@ function App() {
           onStartTimer={startTimer}
           onPauseTimer={() => updateState((current) => pauseChallengeTimer(current))}
           onResetTimer={() => updateState((current) => resetChallengeTimer(current))}
+          onStopTimer={() => updateState((current) => stopChallengeTimer(current))}
+          onRevealSolution={() => updateState((current) => toggleChallengeSolutionReveal(current))}
           onChangeTimerVolume={setTimerVolume}
           onRevealTwist={() => updateState((current) => revealRandomTwist(current, gamePack.twists))}
           onApplyTwist={() =>

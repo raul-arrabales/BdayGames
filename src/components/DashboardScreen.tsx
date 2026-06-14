@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { Dictionary } from '../lib/i18n';
 import type { ChallengeCard, Member, Team, TwistCard } from '../types';
 import { ChallengeLibrary } from './ChallengeLibrary';
@@ -10,6 +10,10 @@ interface DashboardScreenProps {
   round: number;
   currentRoundChallengeCount: number;
   activeChallenge: ChallengeCard | null;
+  resolvedChallenge: ChallengeCard | null;
+  activeChallengeChoiceTeamId: string | null;
+  activeChallengeChoiceOptionIndex: number | null;
+  activeChallengeSolutionRevealed: boolean;
   timerDurationSeconds: number;
   timerSecondsLeft: number;
   timerRunning: boolean;
@@ -22,12 +26,17 @@ interface DashboardScreenProps {
   challengeAwarded: boolean;
   canUndo: boolean;
   onSelectChallenge: (challengeId: string) => void;
+  onSelectPreQuestionTeam: (teamId: string) => void;
+  onClearPreQuestionSelection: () => void;
+  onSelectPreQuestionOption: (optionIndex: number) => void;
   onAwardPoints: (teamId: string, memberId: string, points: number) => void;
   onAwardTeamPoints: (teamId: string, points: number) => void;
   onCompleteChallenge: () => void;
   onStartTimer: () => void;
   onPauseTimer: () => void;
   onResetTimer: () => void;
+  onStopTimer: () => void;
+  onRevealSolution: () => void;
   onChangeTimerVolume: (volume: number) => void;
   onRevealTwist: () => void;
   onApplyTwist: () => void;
@@ -41,6 +50,10 @@ export function DashboardScreen({
   round,
   currentRoundChallengeCount,
   activeChallenge,
+  resolvedChallenge,
+  activeChallengeChoiceTeamId,
+  activeChallengeChoiceOptionIndex,
+  activeChallengeSolutionRevealed,
   timerDurationSeconds,
   timerSecondsLeft,
   timerRunning,
@@ -53,12 +66,17 @@ export function DashboardScreen({
   challengeAwarded,
   canUndo,
   onSelectChallenge,
+  onSelectPreQuestionTeam,
+  onClearPreQuestionSelection,
+  onSelectPreQuestionOption,
   onAwardPoints,
   onAwardTeamPoints,
   onCompleteChallenge,
   onStartTimer,
   onPauseTimer,
   onResetTimer,
+  onStopTimer,
+  onRevealSolution,
   onChangeTimerVolume,
   onRevealTwist,
   onApplyTwist,
@@ -66,10 +84,85 @@ export function DashboardScreen({
   onAdjustManualScore,
   onFinish,
 }: DashboardScreenProps) {
+  const [rollingTeamId, setRollingTeamId] = useState<string | null>(null);
+  const [isRollingTeam, setIsRollingTeam] = useState(false);
+  const rollTimerRef = useRef<number | null>(null);
   const timerProgress = timerDurationSeconds > 0 ? timerSecondsLeft / timerDurationSeconds : 0;
   const timerEmptyProgress = 1 - timerProgress;
   const timerUrgencyClass =
     timerSecondsLeft <= 5 ? 'is-critical' : timerSecondsLeft <= 15 ? 'is-warning' : '';
+  const preQuestion = activeChallenge?.preQuestion ?? null;
+  const triviaMultipleChoice = resolvedChallenge?.category === 'trivia' ? resolvedChallenge.multipleChoice : undefined;
+  const triviaQuestion = resolvedChallenge?.prompt ?? activeChallenge?.prompt ?? '';
+  const triviaAnswerIndex = triviaMultipleChoice?.answerIndex ?? null;
+  const triviaSolutionVisible = Boolean(
+    triviaMultipleChoice &&
+      timerSecondsLeft <= 0 &&
+      activeChallengeSolutionRevealed &&
+      triviaAnswerIndex !== null,
+  );
+  const canRevealSolution = Boolean(triviaMultipleChoice && timerSecondsLeft <= 0);
+  const awaitingPreQuestionTeam = Boolean(preQuestion && activeChallengeChoiceOptionIndex === null);
+
+  useEffect(() => {
+    if (!awaitingPreQuestionTeam) {
+      setRollingTeamId(null);
+      setIsRollingTeam(false);
+      if (rollTimerRef.current !== null) {
+        window.clearInterval(rollTimerRef.current);
+        rollTimerRef.current = null;
+      }
+    }
+  }, [awaitingPreQuestionTeam]);
+
+  useEffect(
+    () => () => {
+      if (rollTimerRef.current !== null) {
+        window.clearInterval(rollTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (activeChallengeChoiceTeamId) {
+      setRollingTeamId(activeChallengeChoiceTeamId);
+      return;
+    }
+
+    setRollingTeamId(null);
+    setIsRollingTeam(false);
+  }, [activeChallengeChoiceTeamId]);
+
+  const rollForTeam = () => {
+    if (!awaitingPreQuestionTeam || rollTimerRef.current !== null || teams.length === 0) {
+      return;
+    }
+
+    const totalSteps = Math.max(10, teams.length * 4);
+    let step = 0;
+    setIsRollingTeam(true);
+    setRollingTeamId(teams[0]?.id ?? null);
+    rollTimerRef.current = window.setInterval(() => {
+      const nextTeam = teams[step % teams.length];
+      setRollingTeamId(nextTeam?.id ?? null);
+      step += 1;
+
+      if (step >= totalSteps) {
+        if (rollTimerRef.current !== null) {
+          window.clearInterval(rollTimerRef.current);
+        }
+        rollTimerRef.current = null;
+        setIsRollingTeam(false);
+
+        const winner = teams[Math.floor(Math.random() * teams.length)] ?? null;
+        setRollingTeamId(winner?.id ?? null);
+        if (winner) {
+          onSelectPreQuestionTeam(winner.id);
+        }
+      }
+    }, 90);
+  };
 
   return (
     <div className="dashboard-layout">
@@ -99,95 +192,211 @@ export function DashboardScreen({
 
         {activeChallenge ? (
           <div className="active-card">
-            <h3>{activeChallenge.title}</h3>
-            <p>{activeChallenge.prompt}</p>
-            <div className="rules-box">
-              <strong>{copy.rules}</strong>
-              <ul>
-                {activeChallenge.rules.map((rule) => (
-                  <li key={rule}>{rule}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="timer-panel">
-              <div className="timer-row">
-                <div
-                  className={`timer-ring ${timerUrgencyClass}`.trim()}
-                  aria-live="polite"
-                  style={{ '--timer-empty-progress': timerEmptyProgress } as CSSProperties}
-                >
-                  <div className="timer-ring-core" />
-                  <span>{timerSecondsLeft}s</span>
+            {preQuestion && activeChallengeChoiceOptionIndex === null ? (
+              <div className="prequestion-panel">
+                <div className="prequestion-header">
+                  <div>
+                    <p className="eyebrow">{copy.preQuestionLabel}</p>
+                    <h3>{activeChallenge.title}</h3>
+                  </div>
+                  {activeChallengeChoiceTeamId ? (
+                    <button className="ghost-button" onClick={onClearPreQuestionSelection}>
+                      {copy.changeTeam}
+                    </button>
+                  ) : null}
                 </div>
-                <label className="timer-volume-control">
-                  <span>{copy.timerVolume}</span>
-                  <input
-                    aria-label={copy.timerVolume}
-                    className="timer-volume-slider"
-                    max="1"
-                    min="0"
-                    step="0.05"
-                    type="range"
-                    value={timerVolume}
-                    onChange={(event) => onChangeTimerVolume(Number(event.target.value))}
-                  />
-                  <strong>{Math.round(timerVolume * 100)}%</strong>
-                </label>
-              </div>
-              <div className="timer-meta">
-                <strong>{timerRunning ? copy.pauseTimer : copy.startTimer}</strong>
-                <span>
-                  {timerSecondsLeft}/{timerDurationSeconds}s
-                </span>
-              </div>
-              <div className="action-row">
-                <button className="primary-button" disabled={timerRunning || timerSecondsLeft <= 0} onClick={onStartTimer}>
-                  {copy.startTimer}
-                </button>
-                <button className="secondary-button" disabled={!timerRunning} onClick={onPauseTimer}>
-                  {copy.pauseTimer}
-                </button>
-                <button className="ghost-button" onClick={onResetTimer}>
-                  {copy.resetTimer}
-                </button>
-              </div>
-            </div>
-            <div className="award-grid">
-              {teams.map((team) => (
-                <article key={team.id} className="award-card" style={{ borderColor: team.color }}>
-                  <h4>{team.name}</h4>
-                  <div className="member-pills">
-                    {members
-                      .filter((member) => member.teamId === team.id)
-                      .map((member) => (
+                <p className="prequestion-prompt">{preQuestion.prompt}</p>
+                {activeChallengeChoiceTeamId ? (
+                  <div className="prequestion-choice-step">
+                    <p className="muted">
+                      {copy.selectedTeam}: <strong>{teams.find((team) => team.id === activeChallengeChoiceTeamId)?.name ?? copy.unknownTeam}</strong>
+                    </p>
+                    <div className="prequestion-option-grid">
+                      {preQuestion.options.map((option, index) => (
                         <button
-                          key={member.id}
-                          disabled={challengeAwarded}
-                          onClick={() => onAwardPoints(team.id, member.id, activeChallenge.points)}
+                          key={`${option.label}-${index}`}
+                          className="prequestion-option-card"
+                          onClick={() => onSelectPreQuestionOption(index)}
                         >
-                          {member.name}
+                          <strong>{option.label}</strong>
                         </button>
                       ))}
+                    </div>
                   </div>
-                  <button
-                    className="secondary-button award-team-button"
-                    disabled={challengeAwarded || members.every((member) => member.teamId !== team.id)}
-                    onClick={() => onAwardTeamPoints(team.id, activeChallenge.points)}
-                  >
-                    {copy.awardWholeTeam}
+                ) : (
+                  <div className="prequestion-team-step">
+                    <p className="muted">{copy.chooseTeamForPreQuestion}</p>
+                    <div className="prequestion-team-grid">
+                      {teams.map((team) => (
+                        <button
+                          key={team.id}
+                          className={`team-chip prequestion-team-chip ${rollingTeamId === team.id ? 'is-rolling' : ''}`}
+                          style={{ background: team.color }}
+                          disabled={isRollingTeam}
+                          onClick={() => onSelectPreQuestionTeam(team.id)}
+                        >
+                          {team.name}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="action-row">
+                      <button className="primary-button" onClick={rollForTeam}>
+                        {copy.randomTeamChoice}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="active-challenge-summary">
+                  {activeChallengeChoiceTeamId ? (
+                    <p className="badge selected-team-badge">
+                      {copy.selectedTeam}: {teams.find((team) => team.id === activeChallengeChoiceTeamId)?.name ?? copy.unknownTeam}
+                    </p>
+                  ) : null}
+                  {triviaMultipleChoice ? (
+                    <div className="trivia-question-hero">
+                      <p className="eyebrow">{copy.triviaQuestion}</p>
+                      <h3>{triviaQuestion}</h3>
+                    </div>
+                  ) : (
+                    <>
+                      <h3>{resolvedChallenge?.title ?? activeChallenge.title}</h3>
+                      <p>{triviaQuestion}</p>
+                    </>
+                  )}
+                </div>
+                {triviaMultipleChoice ? (
+                  <div className="trivia-options-panel">
+                    <div className="trivia-options-grid" role="list" aria-label={copy.triviaOptions}>
+                      {triviaMultipleChoice.options.map((option, index) => {
+                        const isCorrect = triviaSolutionVisible && index === triviaAnswerIndex;
+                        const isHidden = triviaSolutionVisible && index !== triviaAnswerIndex;
+                        return (
+                          <div
+                            key={`${option}-${index}`}
+                            className={`trivia-option-card ${isCorrect ? 'is-correct' : ''} ${isHidden ? 'is-hidden' : ''}`.trim()}
+                            role="listitem"
+                          >
+                            <span className="trivia-option-badge">{String.fromCharCode(65 + index)}</span>
+                            <strong>{option}</strong>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {canRevealSolution ? (
+                      <div className="solution-row">
+                        <button className="secondary-button" onClick={onRevealSolution}>
+                          {activeChallengeSolutionRevealed ? copy.hideSolution : copy.showSolution}
+                        </button>
+                      </div>
+                    ) : null}
+                    {triviaSolutionVisible && triviaAnswerIndex !== null ? (
+                      <div className="solution-box">
+                        <p className="eyebrow">{copy.solution}</p>
+                        <h4>{triviaMultipleChoice.options[triviaAnswerIndex]}</h4>
+                        {triviaMultipleChoice.explanation ? <p>{triviaMultipleChoice.explanation}</p> : null}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+                <div className="rules-box">
+                  <strong>{copy.rules}</strong>
+                  <ul>
+                    {(resolvedChallenge?.rules ?? activeChallenge.rules).map((rule) => (
+                      <li key={rule}>{rule}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="timer-panel">
+                  <div className="timer-card">
+                    <div className="timer-display">
+                      <div
+                        className={`timer-ring ${timerUrgencyClass}`.trim()}
+                        aria-live="polite"
+                        style={{ '--timer-empty-progress': timerEmptyProgress } as CSSProperties}
+                      >
+                        <div className="timer-ring-core" />
+                        <span>{timerSecondsLeft}s</span>
+                      </div>
+                      <div className="timer-meta">
+                        <strong>{timerRunning ? copy.pauseTimer : copy.startTimer}</strong>
+                        <span>
+                          {timerSecondsLeft}/{timerDurationSeconds}s
+                        </span>
+                      </div>
+                    </div>
+                    <div className="timer-controls">
+                      <div className="timer-action-grid">
+                        <button className="primary-button" disabled={timerRunning || timerSecondsLeft <= 0} onClick={onStartTimer}>
+                          {copy.startTimer}
+                        </button>
+                        <button className="secondary-button" disabled={!timerRunning} onClick={onPauseTimer}>
+                          {copy.pauseTimer}
+                        </button>
+                        <button className="ghost-button" onClick={onResetTimer}>
+                          {copy.resetTimer}
+                        </button>
+                        <button className="ghost-button" disabled={timerSecondsLeft <= 0} onClick={onStopTimer}>
+                          {copy.stopTimer}
+                        </button>
+                      </div>
+                      <label className="timer-volume-control">
+                        <span>{copy.timerVolume}</span>
+                        <input
+                          aria-label={copy.timerVolume}
+                          className="timer-volume-slider"
+                          max="1"
+                          min="0"
+                          step="0.05"
+                          type="range"
+                          value={timerVolume}
+                          onChange={(event) => onChangeTimerVolume(Number(event.target.value))}
+                        />
+                        <strong>{Math.round(timerVolume * 100)}%</strong>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div className="award-grid">
+                  {teams.map((team) => (
+                    <article key={team.id} className="award-card" style={{ borderColor: team.color }}>
+                      <h4>{team.name}</h4>
+                      <div className="member-pills">
+                        {members
+                          .filter((member) => member.teamId === team.id)
+                          .map((member) => (
+                            <button
+                              key={member.id}
+                              disabled={challengeAwarded}
+                              onClick={() => onAwardPoints(team.id, member.id, resolvedChallenge?.points ?? activeChallenge.points)}
+                            >
+                              {member.name}
+                            </button>
+                          ))}
+                      </div>
+                      <button
+                        className="secondary-button award-team-button"
+                        disabled={challengeAwarded || members.every((member) => member.teamId !== team.id)}
+                        onClick={() => onAwardTeamPoints(team.id, resolvedChallenge?.points ?? activeChallenge.points)}
+                      >
+                        {copy.awardWholeTeam}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+                {challengeAwarded ? <p className="muted">{copy.pointsAlreadyAssigned}</p> : null}
+                <div className="action-row">
+                  <button className="primary-button" onClick={onCompleteChallenge}>
+                    {copy.markCompleted}
                   </button>
-                </article>
-              ))}
-            </div>
-            {challengeAwarded ? <p className="muted">{copy.pointsAlreadyAssigned}</p> : null}
-            <div className="action-row">
-              <button className="primary-button" onClick={onCompleteChallenge}>
-                {copy.markCompleted}
-              </button>
-              <button className="secondary-button" onClick={onFinish}>
-                {copy.finishGame}
-              </button>
-            </div>
+                  <button className="secondary-button" onClick={onFinish}>
+                    {copy.finishGame}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div className="empty-state">

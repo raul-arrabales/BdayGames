@@ -8,7 +8,7 @@ import type {
   TwistCard,
 } from '../types';
 
-export const APP_STATE_VERSION = 3;
+export const APP_STATE_VERSION = 5;
 export const DEFAULT_CHALLENGE_TIME_SECONDS = 90;
 
 const QUICK_SETUP_MEMBER_NAMES = [
@@ -57,6 +57,9 @@ export function createInitialState(gamePack: GamePack): EventState {
     picks: [],
     currentRound: 1,
     activeChallengeId: null,
+    activeChallengeChoiceTeamId: null,
+    activeChallengeChoiceOptionIndex: null,
+    activeChallengeSolutionRevealed: false,
     challengeAwarded: false,
     challengeTimerDurationSeconds: DEFAULT_CHALLENGE_TIME_SECONDS,
     challengeTimerSecondsLeft: DEFAULT_CHALLENGE_TIME_SECONDS,
@@ -152,6 +155,9 @@ export function fillQuickSetupTeams(state: EventState): EventState {
     picks: [],
     currentRound: 1,
     activeChallengeId: null,
+    activeChallengeChoiceTeamId: null,
+    activeChallengeChoiceOptionIndex: null,
+    activeChallengeSolutionRevealed: false,
     challengeAwarded: false,
     challengeTimerDurationSeconds: DEFAULT_CHALLENGE_TIME_SECONDS,
     challengeTimerSecondsLeft: DEFAULT_CHALLENGE_TIME_SECONDS,
@@ -495,11 +501,66 @@ export function setActiveChallengeWithDuration(
   return {
     ...state,
     activeChallengeId: challengeId,
+    activeChallengeChoiceTeamId: null,
+    activeChallengeChoiceOptionIndex: null,
+    activeChallengeSolutionRevealed: false,
     challengeAwarded: false,
     challengeTimerDurationSeconds: normalizedDuration,
     challengeTimerSecondsLeft: normalizedDuration,
     challengeTimerRunning: false,
     screen: 'dashboard',
+    lastUpdatedAt: now(),
+  };
+}
+
+export function selectChallengePreQuestionTeam(state: EventState, teamId: string): EventState {
+  if (!state.activeChallengeId) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeChallengeChoiceTeamId: teamId,
+    activeChallengeChoiceOptionIndex: null,
+    activeChallengeSolutionRevealed: false,
+    challengeTimerRunning: false,
+    lastUpdatedAt: now(),
+  };
+}
+
+export function clearChallengePreQuestionSelection(state: EventState): EventState {
+  if (!state.activeChallengeId) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeChallengeChoiceTeamId: null,
+    activeChallengeChoiceOptionIndex: null,
+    activeChallengeSolutionRevealed: false,
+    challengeTimerRunning: false,
+    lastUpdatedAt: now(),
+  };
+}
+
+export function selectChallengePreQuestionOption(
+  state: EventState,
+  optionIndex: number,
+  durationSeconds: number,
+): EventState {
+  if (!state.activeChallengeId) {
+    return state;
+  }
+
+  const normalizedDuration = Math.max(1, Math.floor(durationSeconds));
+
+  return {
+    ...state,
+    activeChallengeChoiceOptionIndex: optionIndex,
+    activeChallengeSolutionRevealed: false,
+    challengeTimerDurationSeconds: normalizedDuration,
+    challengeTimerSecondsLeft: normalizedDuration,
+    challengeTimerRunning: false,
     lastUpdatedAt: now(),
   };
 }
@@ -537,6 +598,44 @@ export function resetChallengeTimer(state: EventState): EventState {
     ...state,
     challengeTimerSecondsLeft: state.challengeTimerDurationSeconds,
     challengeTimerRunning: false,
+    activeChallengeSolutionRevealed: false,
+    lastUpdatedAt: now(),
+  };
+}
+
+export function stopChallengeTimer(state: EventState): EventState {
+  if (!state.activeChallengeId || state.challengeTimerSecondsLeft <= 0) {
+    return state;
+  }
+
+  return {
+    ...state,
+    challengeTimerSecondsLeft: 0,
+    challengeTimerRunning: false,
+    lastUpdatedAt: now(),
+  };
+}
+
+export function revealChallengeSolution(state: EventState): EventState {
+  if (!state.activeChallengeId || state.challengeTimerSecondsLeft > 0) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeChallengeSolutionRevealed: true,
+    lastUpdatedAt: now(),
+  };
+}
+
+export function toggleChallengeSolutionReveal(state: EventState): EventState {
+  if (!state.activeChallengeId || state.challengeTimerSecondsLeft > 0) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeChallengeSolutionRevealed: !state.activeChallengeSolutionRevealed,
     lastUpdatedAt: now(),
   };
 }
@@ -568,6 +667,9 @@ export function completeChallenge(
       ...state,
       completedChallengeIds: [...state.completedChallengeIds, state.activeChallengeId],
       activeChallengeId: null,
+      activeChallengeChoiceTeamId: null,
+      activeChallengeChoiceOptionIndex: null,
+      activeChallengeSolutionRevealed: false,
       challengeTimerRunning: false,
       currentRound: state.currentRound + 1,
       lastUpdatedAt: now(),
@@ -575,6 +677,9 @@ export function completeChallenge(
     undoAction: {
       type: 'complete_challenge',
       challengeId: state.activeChallengeId,
+      previousChoiceTeamId: state.activeChallengeChoiceTeamId,
+      previousChoiceOptionIndex: state.activeChallengeChoiceOptionIndex,
+      previousSolutionRevealed: state.activeChallengeSolutionRevealed,
     },
   };
 }
@@ -790,6 +895,9 @@ export function undoLastAction(state: EventState, undoAction: UndoAction | null)
         ...state,
         completedChallengeIds: state.completedChallengeIds.filter((id) => id !== undoAction.challengeId),
         activeChallengeId: undoAction.challengeId,
+        activeChallengeChoiceTeamId: undoAction.previousChoiceTeamId,
+        activeChallengeChoiceOptionIndex: undoAction.previousChoiceOptionIndex,
+        activeChallengeSolutionRevealed: undoAction.previousSolutionRevealed,
         challengeTimerSecondsLeft: state.challengeTimerDurationSeconds,
         challengeTimerRunning: false,
         currentRound: Math.max(1, state.currentRound - 1),

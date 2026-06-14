@@ -11,6 +11,10 @@ describe('parseGamePack', () => {
     expect(pack.rules.length).toBeGreaterThan(0);
     expect(pack.challenges.some((challenge) => challenge.category === 'trivia')).toBe(true);
     expect(pack.challenges.every((challenge) => challenge.time > 0)).toBe(true);
+    expect(pack.challenges[0].multipleChoice?.options).toHaveLength(4);
+    expect(pack.challenges[0].multipleChoice?.answerIndex).toBe(0);
+    expect(pack.challenges[0].preQuestion?.options).toHaveLength(2);
+    expect(pack.challenges[0].preQuestion?.options[0].label).toBe('Ciencias');
     expect(pack.twists.some((twist) => twist.effectType === 'steal_member')).toBe(true);
   });
 

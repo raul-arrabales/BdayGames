@@ -9,6 +9,31 @@ export type Screen =
 
 export type ChallengeCategory = 'trivia' | 'skill' | 'creative' | 'duel' | 'chaos';
 
+export interface ChallengeVariant {
+  title?: string;
+  prompt: string;
+  rules?: string[];
+  points?: number;
+  time?: number;
+  multipleChoice?: ChallengeMultipleChoice;
+}
+
+export interface ChallengeMultipleChoice {
+  options: string[];
+  answerIndex: number;
+  explanation?: string;
+}
+
+export interface ChallengePreQuestionOption {
+  label: string;
+  challenge: ChallengeVariant;
+}
+
+export interface ChallengePreQuestion {
+  prompt: string;
+  options: ChallengePreQuestionOption[];
+}
+
 export type TwistEffectType =
   | 'steal_member'
   | 'bonus_points'
@@ -24,6 +49,8 @@ export interface ChallengeCard {
   rules: string[];
   points: number;
   time: number;
+  multipleChoice?: ChallengeMultipleChoice;
+  preQuestion?: ChallengePreQuestion;
 }
 
 export interface TwistCard {
@@ -95,6 +122,9 @@ export interface EventState {
   picks: DraftPick[];
   currentRound: number;
   activeChallengeId: string | null;
+  activeChallengeChoiceTeamId: string | null;
+  activeChallengeChoiceOptionIndex: number | null;
+  activeChallengeSolutionRevealed: boolean;
   challengeAwarded: boolean;
   challengeTimerDurationSeconds: number;
   challengeTimerSecondsLeft: number;
@@ -133,9 +163,12 @@ export type UndoAction =
       previousMemberScores?: Array<{ memberId: string; points: number }>;
     }
   | {
-      type: 'complete_challenge';
-      challengeId: string;
-    }
+    type: 'complete_challenge';
+    challengeId: string;
+    previousChoiceTeamId: string | null;
+    previousChoiceOptionIndex: number | null;
+    previousSolutionRevealed: boolean;
+  }
   | {
       type: 'apply_twist';
       previousState: Pick<

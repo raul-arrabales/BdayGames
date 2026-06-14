@@ -622,23 +622,245 @@ input[type="color"]::-moz-color-swatch {
   gap: 1rem;
 }
 
+.active-challenge-summary {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.trivia-question-hero {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem 1.1rem 1.1rem;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 211, 61, 0.18), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.06));
+  border: 2px solid rgba(255, 211, 61, 0.42);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 18px 34px rgba(0, 0, 0, 0.18);
+}
+
+.trivia-question-hero h3 {
+  margin: 0;
+  font-size: clamp(1.7rem, 3.6vw, 3rem);
+  line-height: 1.02;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+.trivia-options-panel {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.trivia-options-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+}
+
+.trivia-option-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: 4.2rem;
+  padding: 1rem 1.05rem;
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.06)),
+    rgba(12, 17, 35, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.16);
+}
+
+.trivia-option-card strong {
+  font-size: 1.02rem;
+}
+
+.trivia-option-badge {
+  width: 2.3rem;
+  height: 2.3rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffd33d, #ff7a00);
+  color: #1b132c;
+  font-weight: 900;
+  box-shadow: 0 6px 16px rgba(255, 122, 0, 0.18);
+}
+
+.trivia-option-card.is-correct {
+  border-color: rgba(68, 208, 122, 0.9);
+  background:
+    radial-gradient(circle at top right, rgba(68, 208, 122, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(68, 208, 122, 0.2), rgba(255, 255, 255, 0.08));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 16px 34px rgba(31, 189, 103, 0.2);
+}
+
+.trivia-option-card.is-hidden {
+  opacity: 0.55;
+  filter: saturate(0.4);
+}
+
+.solution-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.solution-box {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem 1.05rem;
+  border-radius: 22px;
+  background: rgba(68, 208, 122, 0.12);
+  border: 1px solid rgba(68, 208, 122, 0.35);
+}
+
+.solution-box h4 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.prequestion-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.prequestion-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.prequestion-header h3 {
+  margin: 0.15rem 0 0;
+  font-size: clamp(1.35rem, 2.4vw, 1.9rem);
+}
+
+.prequestion-prompt {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.prequestion-team-step,
+.prequestion-choice-step {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.prequestion-team-grid,
+.prequestion-option-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.prequestion-team-chip,
+.prequestion-option-card {
+  text-align: left;
+}
+
+.prequestion-team-chip {
+  justify-content: flex-start;
+  min-height: 3.25rem;
+  color: #08111d;
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
+}
+
+.prequestion-team-chip.is-rolling {
+  outline: 3px solid rgba(255, 255, 255, 0.7);
+  transform: scale(1.04);
+  box-shadow:
+    0 0 0 0.35rem rgba(255, 255, 255, 0.14),
+    0 0 34px rgba(255, 211, 61, 0.18);
+}
+
+.prequestion-option-card {
+  display: grid;
+  gap: 0.4rem;
+  padding: 1rem 1.05rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.prequestion-option-card strong {
+  font-size: 1rem;
+}
+
+.prequestion-option-card span:last-child {
+  color: rgba(255, 247, 237, 0.72);
+  font-size: 0.86rem;
+}
+
+.prequestion-option-card:hover:not(:disabled),
+.prequestion-team-chip:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.01);
+}
+
+.selected-team-badge {
+  background: rgba(255, 211, 61, 0.95);
+  color: #08111d;
+  font-weight: 900;
+}
+
 .timer-panel {
   display: grid;
   gap: 0.9rem;
-  justify-items: start;
+  width: 100%;
 }
 
-.timer-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+.timer-card {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: 1rem;
+  align-items: center;
+  width: 100%;
+  padding: 1rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px rgba(8, 17, 29, 0.18);
+}
+
+.timer-display {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 0.9rem;
+  width: max-content;
+}
+
+.timer-controls {
+  display: grid;
+  gap: 0.9rem;
+  min-width: 0;
+  align-self: stretch;
 }
 
 .timer-meta {
   display: grid;
   gap: 0.2rem;
   color: rgba(255, 247, 237, 0.82);
+}
+
+.timer-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
 }
 
 .rules-box,
@@ -737,7 +959,8 @@ input[type="color"]::-moz-color-swatch {
 .timer-volume-control {
   display: grid;
   gap: 0.4rem;
-  min-width: 10rem;
+  width: 100%;
+  min-width: 0;
   padding: 0.9rem 1rem;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.07);
@@ -1076,7 +1299,11 @@ input[type="color"]::-moz-color-swatch {
   }
 
   .timer-volume-control {
-    min-width: 8.5rem;
+    min-width: 0;
+  }
+
+  .timer-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .winner-header {
@@ -1087,5 +1314,20 @@ input[type="color"]::-moz-color-swatch {
   .winner-medal {
     width: 4.6rem;
     height: 4.6rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .timer-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timer-display {
+    width: 100%;
+    justify-items: center;
+  }
+
+  .timer-meta {
+    text-align: center;
   }
 }
