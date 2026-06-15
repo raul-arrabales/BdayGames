@@ -317,7 +317,6 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .screen-grid.two-column,
-.dashboard-layout,
 .score-grid,
 .category-grid,
 .podium-grid,
@@ -326,8 +325,7 @@ input[type="color"]::-moz-color-swatch {
   gap: 1.25rem;
 }
 
-.screen-grid.two-column,
-.dashboard-layout {
+.screen-grid.two-column {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
 }
@@ -339,7 +337,9 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .dashboard-layout {
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  width: min(100%, 80rem);
+  margin-inline: auto;
 }
 
 .panel,
