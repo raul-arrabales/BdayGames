@@ -19,14 +19,30 @@ summary: Un set inicial de retos, giros y reglas para dirigir una fiesta de cump
     options:
       - label: (A) Mecánica del Automóvil
         challenge:
-          prompt: Que planeta se conoce como el planeta rojo?
+          prompt: ¿Qué pieza del motor convierte el movimiento de los pistones en giro?
+          multipleChoice:
+            options:
+              - El cigüeñal
+              - El radiador
+              - La batería
+              - El filtro de aire
+            answerIndex: 0
+            explanation: El cigüeñal transforma el movimiento lineal de los pistones en movimiento giratorio.
           rules:
             - Responde un unico representante.
           points: 100
           time: 60
       - label: (B) Cyberseguridad
         challenge:
-          prompt: Quien escribio Don Quijote de la Mancha?
+          prompt: ¿Qué medida protege mejor una cuenta online frente a accesos no autorizados?
+          multipleChoice:
+            options:
+              - Usar autenticación multifactor
+              - Compartir la contraseña con familiares
+              - Repetir la misma contraseña en todas partes
+              - Escribir la contraseña en un papel visible
+            answerIndex: 0
+            explanation: La autenticación multifactor añade una capa extra de seguridad al iniciar sesión.
           rules:
             - Responde un unico representante.
           points: 100

@@ -262,11 +262,18 @@ describe('game state helpers', () => {
   it('parses trivia multiple choice options from the pack', () => {
     const { pack } = seededState();
     const triviaChallenge = pack.challenges.find((challenge) => challenge.preQuestion);
-    const resolvedChallenge = triviaChallenge ? resolveChallengeCard(triviaChallenge, 0) : null;
+    const automotiveChallenge = triviaChallenge ? resolveChallengeCard(triviaChallenge, 0) : null;
+    const cybersecurityChallenge = triviaChallenge ? resolveChallengeCard(triviaChallenge, 1) : null;
 
     expect(triviaChallenge?.preQuestion?.options).toHaveLength(2);
-    expect(resolvedChallenge?.prompt).toBe('Que planeta se conoce como el planeta rojo?');
-    expect(resolvedChallenge?.time).toBe(60);
+    expect(triviaChallenge?.preQuestion?.options[0].challenge.multipleChoice?.options).toHaveLength(4);
+    expect(triviaChallenge?.preQuestion?.options[1].challenge.multipleChoice?.options).toHaveLength(4);
+    expect(automotiveChallenge?.prompt).toBe('¿Qué pieza del motor convierte el movimiento de los pistones en giro?');
+    expect(automotiveChallenge?.multipleChoice?.answerIndex).toBe(0);
+    expect(cybersecurityChallenge?.prompt).toBe(
+      '¿Qué medida protege mejor una cuenta online frente a accesos no autorizados?',
+    );
+    expect(cybersecurityChallenge?.multipleChoice?.answerIndex).toBe(0);
   });
 
   it('resolves pre-question challenge branches and preserves undo state', () => {
@@ -290,7 +297,8 @@ describe('game state helpers', () => {
     expect(resolvedState.activeChallengeSolutionRevealed).toBe(false);
 
     const resolvedChallenge = resolveChallengeCard(challenge, resolvedState.activeChallengeChoiceOptionIndex);
-    expect(resolvedChallenge.prompt).toContain('planeta');
+    expect(resolvedChallenge.prompt).toBe('¿Qué pieza del motor convierte el movimiento de los pistones en giro?');
+    expect(resolvedChallenge.multipleChoice?.options).toHaveLength(4);
 
     const finished = {
       ...resolvedState,

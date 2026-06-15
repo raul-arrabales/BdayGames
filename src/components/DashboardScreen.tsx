@@ -164,9 +164,6 @@ export function DashboardScreen({
         ) : null}
         <div className="panel-header">
           <div>
-            <p className="eyebrow">
-              {copy.round} {round}
-            </p>
             <h2>{copy.dashboardTitle}</h2>
           </div>
           <div className="action-row">
