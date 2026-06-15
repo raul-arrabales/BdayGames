@@ -1,13 +1,21 @@
 import type { Dictionary } from '../lib/i18n';
+import type { Team } from '../types';
 
 interface RoundProgressProps {
   copy: Dictionary;
   currentRound: number;
   totalRounds: number;
   completedRounds: number;
+  currentTeam: Team | null;
 }
 
-export function RoundProgress({ copy, currentRound, totalRounds, completedRounds }: RoundProgressProps) {
+export function RoundProgress({
+  copy,
+  currentRound,
+  totalRounds,
+  completedRounds,
+  currentTeam,
+}: RoundProgressProps) {
   const safeTotalRounds = Math.max(0, totalRounds);
   const currentRoundIndex = currentRound >= 1 && currentRound <= safeTotalRounds ? currentRound - 1 : null;
   const rounds = Array.from({ length: safeTotalRounds }, (_, index) => {
@@ -34,6 +42,11 @@ export function RoundProgress({ copy, currentRound, totalRounds, completedRounds
             {copy.round} {currentRound} {copy.roundProgressOf} {safeTotalRounds}
           </h3>
         </div>
+        {currentTeam ? (
+          <p className="badge round-progress-team-badge">
+            {copy.roundLeader}: <strong>{currentTeam.name}</strong>
+          </p>
+        ) : null}
       </div>
 
       <ol className="round-progress-track">

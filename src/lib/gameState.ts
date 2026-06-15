@@ -8,7 +8,7 @@ import type {
   TwistCard,
 } from '../types';
 
-export const APP_STATE_VERSION = 5;
+export const APP_STATE_VERSION = 6;
 export const DEFAULT_CHALLENGE_TIME_SECONDS = 90;
 
 const QUICK_SETUP_MEMBER_NAMES = [
@@ -54,6 +54,7 @@ export function createInitialState(gamePack: GamePack): EventState {
     draftRound: 1,
     draftDirection: 'forward',
     currentTurnTeamId: null,
+    currentRoundLeaderTeamId: null,
     picks: [],
     currentRound: 1,
     activeChallengeId: null,
@@ -152,6 +153,7 @@ export function fillQuickSetupTeams(state: EventState): EventState {
     draftRound: 1,
     draftDirection: 'forward',
     currentTurnTeamId: null,
+    currentRoundLeaderTeamId: null,
     picks: [],
     currentRound: 1,
     activeChallengeId: null,
@@ -268,6 +270,36 @@ export function setBirthdayPerson(state: EventState, memberId: string): EventSta
     })),
     lastUpdatedAt: now(),
   };
+}
+
+export function setCurrentRoundLeaderTeam(state: EventState, teamId: string | null): EventState {
+  if (teamId !== null && !state.teams.some((team) => team.id === teamId)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    currentRoundLeaderTeamId: teamId,
+    lastUpdatedAt: now(),
+  };
+}
+
+export function getNextRoundLeaderTeamId(state: EventState): string | null {
+  if (state.teams.length === 0) {
+    return null;
+  }
+
+  const currentTeamId = state.currentRoundLeaderTeamId;
+  if (!currentTeamId) {
+    return state.teams[0]?.id ?? null;
+  }
+
+  const currentIndex = state.teams.findIndex((team) => team.id === currentTeamId);
+  if (currentIndex === -1) {
+    return state.teams[0]?.id ?? null;
+  }
+
+  return state.teams[(currentIndex + 1) % state.teams.length]?.id ?? null;
 }
 
 export function awardPoints(
@@ -662,6 +694,8 @@ export function completeChallenge(
     return { state, undoAction: null };
   }
 
+  const nextRoundLeaderTeamId = getNextRoundLeaderTeamId(state);
+
   return {
     state: {
       ...state,
@@ -671,6 +705,7 @@ export function completeChallenge(
       activeChallengeChoiceOptionIndex: null,
       activeChallengeSolutionRevealed: false,
       challengeTimerRunning: false,
+      currentRoundLeaderTeamId: nextRoundLeaderTeamId,
       currentRound: state.currentRound + 1,
       lastUpdatedAt: now(),
     },
@@ -680,6 +715,7 @@ export function completeChallenge(
       previousChoiceTeamId: state.activeChallengeChoiceTeamId,
       previousChoiceOptionIndex: state.activeChallengeChoiceOptionIndex,
       previousSolutionRevealed: state.activeChallengeSolutionRevealed,
+      previousRoundLeaderTeamId: state.currentRoundLeaderTeamId,
     },
   };
 }
@@ -715,6 +751,7 @@ export function applyTwist(
       revealedTwists: state.revealedTwists,
       activeDoubleRound: state.activeDoubleRound,
       activeTwistId: state.activeTwistId,
+      currentRoundLeaderTeamId: state.currentRoundLeaderTeamId,
     },
   };
 
@@ -771,6 +808,13 @@ export function applyTwist(
           ),
         };
       }
+      break;
+    }
+    case 'shift_round_leader': {
+      nextState = {
+        ...nextState,
+        currentRoundLeaderTeamId: getNextRoundLeaderTeamId(nextState),
+      };
       break;
     }
     case 'steal_member': {
@@ -900,15 +944,19 @@ export function undoLastAction(state: EventState, undoAction: UndoAction | null)
         activeChallengeSolutionRevealed: undoAction.previousSolutionRevealed,
         challengeTimerSecondsLeft: state.challengeTimerDurationSeconds,
         challengeTimerRunning: false,
+        currentRoundLeaderTeamId:
+          typeof undoAction.previousRoundLeaderTeamId === 'string'
+            ? undoAction.previousRoundLeaderTeamId
+            : state.currentRoundLeaderTeamId,
         currentRound: Math.max(1, state.currentRound - 1),
         lastUpdatedAt: now(),
       };
     case 'apply_twist':
       return {
-        ...state,
-        ...undoAction.previousState,
-        lastUpdatedAt: now(),
-      };
+      ...state,
+      ...undoAction.previousState,
+      lastUpdatedAt: now(),
+    };
   }
 }
 

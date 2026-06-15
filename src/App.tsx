@@ -26,6 +26,7 @@ import {
   revealRandomTwist,
   setActiveChallenge,
   setActiveChallengeWithDuration,
+  setCurrentRoundLeaderTeam,
   setBirthdayPerson,
   pauseChallengeTimer,
   resetChallengeTimer,
@@ -182,6 +183,7 @@ function App() {
     : null;
   const activeTwist = gamePack.twists.find((twist) => twist.id === eventState.activeTwistId) ?? null;
   const currentDraftTeam = eventState.teams.find((team) => team.id === eventState.currentTurnTeamId);
+  const currentRoundTeam = eventState.teams.find((team) => team.id === eventState.currentRoundLeaderTeamId) ?? null;
   const hasCompletedAllRounds =
     gamePack.challenges.length > 0 && eventState.completedChallengeIds.length >= gamePack.challenges.length;
 
@@ -392,6 +394,8 @@ function App() {
               members: current.members.map((member) =>
                 member.teamId === teamId ? { ...member, teamId: null } : member,
               ),
+              currentRoundLeaderTeamId:
+                current.currentRoundLeaderTeamId === teamId ? null : current.currentRoundLeaderTeamId,
               lastUpdatedAt: new Date().toISOString(),
             }))
           }
@@ -448,6 +452,7 @@ function App() {
           copy={copy}
           round={eventState.currentRound}
           currentRoundChallengeCount={gamePack.challenges.length}
+          currentRoundTeam={currentRoundTeam}
           activeChallenge={activeChallenge}
           resolvedChallenge={activeChallengeResolved}
           activeChallengeChoiceTeamId={eventState.activeChallengeChoiceTeamId}
@@ -471,6 +476,9 @@ function App() {
                 ? setActiveChallengeWithDuration(current, challengeId, challenge.time ?? DEFAULT_CHALLENGE_TIME_SECONDS)
                 : setActiveChallenge(current, challengeId);
             })
+          }
+          onSelectCurrentRoundTeam={(teamId) =>
+            updateState((current) => setCurrentRoundLeaderTeam(current, teamId))
           }
           onSelectPreQuestionTeam={(teamId) =>
             updateState((current) => selectChallengePreQuestionTeam(current, teamId))

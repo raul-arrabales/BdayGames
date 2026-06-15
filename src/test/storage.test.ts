@@ -49,6 +49,7 @@ describe('storage', () => {
         challengeTimerDurationSeconds: 90,
         challengeTimerSecondsLeft: 90,
         challengeTimerRunning: false,
+        currentRoundLeaderTeamId: null,
       },
     });
 

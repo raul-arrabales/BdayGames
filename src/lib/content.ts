@@ -67,6 +67,7 @@ const twistMap: Record<string, TwistEffectType> = {
   swap_scores: 'swap_scores',
   double_round: 'double_round',
   skip_turn: 'skip_turn',
+  shift_round_leader: 'shift_round_leader',
 };
 
 function parseFrontmatter(markdown: string): { data: FrontmatterShape; content: string } {

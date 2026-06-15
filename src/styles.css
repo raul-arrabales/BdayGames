@@ -428,6 +428,11 @@ input[type="color"]::-moz-color-swatch {
   font-size: clamp(1.2rem, 2vw, 1.5rem);
 }
 
+.round-progress-team-badge {
+  margin: 0;
+  align-self: center;
+}
+
 .round-progress-track {
   position: relative;
   display: flex;
@@ -590,6 +595,15 @@ input[type="color"]::-moz-color-swatch {
   border-radius: 22px;
   border: 2px solid currentColor;
   background: rgba(255, 255, 255, 0.05);
+}
+
+.team-raffle {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem 1.1rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .team-chip {

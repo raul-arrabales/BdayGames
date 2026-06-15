@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import type { Dictionary } from '../lib/i18n';
 import type { ChallengeCard, Member, Team, TwistCard } from '../types';
 import { ChallengeLibrary } from './ChallengeLibrary';
 import { RoundProgress } from './RoundProgress';
 import { Scoreboard } from './Scoreboard';
+import { TeamRaffle } from './TeamRaffle';
 
 interface DashboardScreenProps {
   copy: Dictionary;
   round: number;
   currentRoundChallengeCount: number;
+  currentRoundTeam: Team | null;
   activeChallenge: ChallengeCard | null;
   resolvedChallenge: ChallengeCard | null;
   activeChallengeChoiceTeamId: string | null;
@@ -26,6 +28,7 @@ interface DashboardScreenProps {
   challengeAwarded: boolean;
   canUndo: boolean;
   onSelectChallenge: (challengeId: string) => void;
+  onSelectCurrentRoundTeam: (teamId: string) => void;
   onSelectPreQuestionTeam: (teamId: string) => void;
   onClearPreQuestionSelection: () => void;
   onSelectPreQuestionOption: (optionIndex: number) => void;
@@ -49,6 +52,7 @@ export function DashboardScreen({
   copy,
   round,
   currentRoundChallengeCount,
+  currentRoundTeam,
   activeChallenge,
   resolvedChallenge,
   activeChallengeChoiceTeamId,
@@ -66,6 +70,7 @@ export function DashboardScreen({
   challengeAwarded,
   canUndo,
   onSelectChallenge,
+  onSelectCurrentRoundTeam,
   onSelectPreQuestionTeam,
   onClearPreQuestionSelection,
   onSelectPreQuestionOption,
@@ -84,10 +89,7 @@ export function DashboardScreen({
   onAdjustManualScore,
   onFinish,
 }: DashboardScreenProps) {
-  const [rollingTeamId, setRollingTeamId] = useState<string | null>(null);
-  const [isRollingTeam, setIsRollingTeam] = useState(false);
   const [isTwistModalOpen, setIsTwistModalOpen] = useState(false);
-  const rollTimerRef = useRef<number | null>(null);
   const timerProgress = timerDurationSeconds > 0 ? timerSecondsLeft / timerDurationSeconds : 0;
   const timerEmptyProgress = 1 - timerProgress;
   const timerUrgencyClass =
@@ -103,38 +105,6 @@ export function DashboardScreen({
       triviaAnswerIndex !== null,
   );
   const canRevealSolution = Boolean(triviaMultipleChoice && timerSecondsLeft <= 0);
-  const awaitingPreQuestionTeam = Boolean(preQuestion && activeChallengeChoiceOptionIndex === null);
-
-  useEffect(() => {
-    if (!awaitingPreQuestionTeam) {
-      setRollingTeamId(null);
-      setIsRollingTeam(false);
-      if (rollTimerRef.current !== null) {
-        window.clearInterval(rollTimerRef.current);
-        rollTimerRef.current = null;
-      }
-    }
-  }, [awaitingPreQuestionTeam]);
-
-  useEffect(
-    () => () => {
-      if (rollTimerRef.current !== null) {
-        window.clearInterval(rollTimerRef.current);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (activeChallengeChoiceTeamId) {
-      setRollingTeamId(activeChallengeChoiceTeamId);
-      return;
-    }
-
-    setRollingTeamId(null);
-    setIsRollingTeam(false);
-  }, [activeChallengeChoiceTeamId]);
-
   useEffect(() => {
     if (activeTwist) {
       setIsTwistModalOpen(true);
@@ -174,36 +144,6 @@ export function DashboardScreen({
     setIsTwistModalOpen(false);
   };
 
-  const rollForTeam = () => {
-    if (!awaitingPreQuestionTeam || rollTimerRef.current !== null || teams.length === 0) {
-      return;
-    }
-
-    const totalSteps = Math.max(10, teams.length * 4);
-    let step = 0;
-    setIsRollingTeam(true);
-    setRollingTeamId(teams[0]?.id ?? null);
-    rollTimerRef.current = window.setInterval(() => {
-      const nextTeam = teams[step % teams.length];
-      setRollingTeamId(nextTeam?.id ?? null);
-      step += 1;
-
-      if (step >= totalSteps) {
-        if (rollTimerRef.current !== null) {
-          window.clearInterval(rollTimerRef.current);
-        }
-        rollTimerRef.current = null;
-        setIsRollingTeam(false);
-
-        const winner = teams[Math.floor(Math.random() * teams.length)] ?? null;
-        setRollingTeamId(winner?.id ?? null);
-        if (winner) {
-          onSelectPreQuestionTeam(winner.id);
-        }
-      }
-    }, 90);
-  };
-
   return (
     <div className="dashboard-layout">
       <section className="panel spotlight">
@@ -212,7 +152,16 @@ export function DashboardScreen({
           currentRound={round}
           totalRounds={currentRoundChallengeCount}
           completedRounds={completedChallengeIds.length}
+          currentTeam={currentRoundTeam}
         />
+        {!currentRoundTeam ? (
+          <TeamRaffle
+            copy={copy}
+            teams={teams}
+            prompt={copy.chooseRoundTeam}
+            onSelectTeam={onSelectCurrentRoundTeam}
+          />
+        ) : null}
         <div className="panel-header">
           <div>
             <p className="eyebrow">
@@ -234,7 +183,7 @@ export function DashboardScreen({
           <div className="active-card">
             {preQuestion && activeChallengeChoiceOptionIndex === null ? (
               <div className="prequestion-panel">
-                <div className="prequestion-header">
+              <div className="prequestion-header">
                   <div>
                     <p className="eyebrow">{copy.preQuestionLabel}</p>
                     <h3>{activeChallenge.title}</h3>
@@ -264,27 +213,12 @@ export function DashboardScreen({
                     </div>
                   </div>
                 ) : (
-                  <div className="prequestion-team-step">
-                    <p className="muted">{copy.chooseTeamForPreQuestion}</p>
-                    <div className="prequestion-team-grid">
-                      {teams.map((team) => (
-                        <button
-                          key={team.id}
-                          className={`team-chip prequestion-team-chip ${rollingTeamId === team.id ? 'is-rolling' : ''}`}
-                          style={{ background: team.color }}
-                          disabled={isRollingTeam}
-                          onClick={() => onSelectPreQuestionTeam(team.id)}
-                        >
-                          {team.name}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="action-row">
-                      <button className="primary-button" onClick={rollForTeam}>
-                        {copy.randomTeamChoice}
-                      </button>
-                    </div>
-                  </div>
+                  <TeamRaffle
+                    copy={copy}
+                    teams={teams}
+                    prompt={copy.chooseTeamForPreQuestion}
+                    onSelectTeam={onSelectPreQuestionTeam}
+                  />
                 )}
               </div>
             ) : (

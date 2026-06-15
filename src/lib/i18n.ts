@@ -70,6 +70,8 @@ export const strings = {
     roundProgressCompleted: 'Hechas',
     roundProgressCurrent: 'Actual',
     roundProgressPending: 'Pendientes',
+    roundLeader: 'Equipo de la ronda',
+    chooseRoundTeam: 'Sortea qué equipo empieza',
     surprise: 'Sorpresa',
     rules: 'Reglas',
     finishGame: 'Finalizar juego',

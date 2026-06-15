@@ -2,7 +2,7 @@ import type { PersistedEvent } from '../types';
 import { APP_STATE_VERSION, DEFAULT_CHALLENGE_TIME_SECONDS } from './gameState';
 
 const storageNamespace = import.meta.env.MODE === 'playtest' ? 'playtest' : '';
-export const PERSISTED_EVENT_VERSION = 6;
+export const PERSISTED_EVENT_VERSION = 7;
 
 export const STORAGE_KEY = storageNamespace ? `bday-games-event:${storageNamespace}` : 'bday-games-event';
 
@@ -46,6 +46,11 @@ function normalizePersistedState(persisted: PersistedEvent): PersistedEvent {
       challengeTimerDurationSeconds: duration,
       challengeTimerSecondsLeft: Math.min(secondsLeft, duration),
       challengeTimerRunning: Boolean(state.challengeTimerRunning) && secondsLeft > 0,
+      currentRoundLeaderTeamId:
+        typeof state.currentRoundLeaderTeamId === 'string' &&
+        state.teams.some((team) => team.id === state.currentRoundLeaderTeamId)
+          ? state.currentRoundLeaderTeamId
+          : null,
     },
   };
 }

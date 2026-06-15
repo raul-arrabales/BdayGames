@@ -39,7 +39,8 @@ export type TwistEffectType =
   | 'bonus_points'
   | 'swap_scores'
   | 'double_round'
-  | 'skip_turn';
+  | 'skip_turn'
+  | 'shift_round_leader';
 
 export interface ChallengeCard {
   id: string;
@@ -119,6 +120,7 @@ export interface EventState {
   draftRound: number;
   draftDirection: 'forward' | 'reverse';
   currentTurnTeamId: string | null;
+  currentRoundLeaderTeamId: string | null;
   picks: DraftPick[];
   currentRound: number;
   activeChallengeId: string | null;
@@ -163,19 +165,20 @@ export type UndoAction =
       previousMemberScores?: Array<{ memberId: string; points: number }>;
     }
   | {
-    type: 'complete_challenge';
-    challengeId: string;
-    previousChoiceTeamId: string | null;
-    previousChoiceOptionIndex: number | null;
-    previousSolutionRevealed: boolean;
-  }
+      type: 'complete_challenge';
+      challengeId: string;
+      previousChoiceTeamId: string | null;
+      previousChoiceOptionIndex: number | null;
+      previousSolutionRevealed: boolean;
+      previousRoundLeaderTeamId: string | null;
+    }
   | {
-      type: 'apply_twist';
-      previousState: Pick<
-        EventState,
-        'teams' | 'members' | 'revealedTwists' | 'activeDoubleRound' | 'activeTwistId'
-      >;
-    };
+    type: 'apply_twist';
+    previousState: Pick<
+      EventState,
+      'teams' | 'members' | 'revealedTwists' | 'activeDoubleRound' | 'activeTwistId' | 'currentRoundLeaderTeamId'
+    >;
+  };
 
 export interface PersistedEvent {
   version: number;

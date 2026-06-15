@@ -20,6 +20,7 @@ import {
   pauseChallengeTimer,
   resetChallengeTimer,
   setActiveChallengeWithDuration,
+  setCurrentRoundLeaderTeam,
   setBirthdayPerson,
   selectChallengePreQuestionOption,
   selectChallengePreQuestionTeam,
@@ -67,6 +68,14 @@ describe('game state helpers', () => {
 
     const afterPick = assignMemberToTeam(started, memberC.id, started.teams[0].id);
     expect(afterPick.currentTurnTeamId).toBe(started.teams[1].id);
+  });
+
+  it('tracks the current round leader team separately from the draft turn', () => {
+    const { state } = seededState();
+    const updated = setCurrentRoundLeaderTeam(state, state.teams[1].id);
+
+    expect(updated.currentRoundLeaderTeamId).toBe(state.teams[1].id);
+    expect(updated.currentTurnTeamId).toBeNull();
   });
 
   it('fills a quick test setup with two teams and four members each', () => {
@@ -209,6 +218,23 @@ describe('game state helpers', () => {
     expect(ranking[0].score).toBe(result.state.teams[0].score);
   });
 
+  it('shifts the round leader twist forward and supports undo', () => {
+    const { pack, state } = seededState();
+    const twist = pack.twists.find((entry) => entry.effectType === 'shift_round_leader');
+    expect(twist).toBeDefined();
+
+    const preparedState = {
+      ...state,
+      currentRoundLeaderTeamId: state.teams[0].id,
+    };
+
+    const result = applyTwist(preparedState, twist!);
+    expect(result.state.currentRoundLeaderTeamId).toBe(state.teams[1].id);
+
+    const reverted = undoLastAction(result.state, result.undoAction);
+    expect(reverted.currentRoundLeaderTeamId).toBe(state.teams[0].id);
+  });
+
   it('manages the challenge timer lifecycle', () => {
     const { pack, state } = seededState();
     const challenge = pack.challenges.find((entry) => entry.time === 45);
@@ -235,9 +261,12 @@ describe('game state helpers', () => {
 
   it('parses trivia multiple choice options from the pack', () => {
     const { pack } = seededState();
+    const triviaChallenge = pack.challenges.find((challenge) => challenge.preQuestion);
+    const resolvedChallenge = triviaChallenge ? resolveChallengeCard(triviaChallenge, 0) : null;
 
-    expect(pack.challenges[0].multipleChoice?.options).toHaveLength(4);
-    expect(pack.challenges[0].multipleChoice?.answerIndex).toBe(0);
+    expect(triviaChallenge?.preQuestion?.options).toHaveLength(2);
+    expect(resolvedChallenge?.prompt).toBe('Que planeta se conoce como el planeta rojo?');
+    expect(resolvedChallenge?.time).toBe(60);
   });
 
   it('resolves pre-question challenge branches and preserves undo state', () => {
@@ -267,12 +296,15 @@ describe('game state helpers', () => {
       ...resolvedState,
       activeChallengeChoiceTeamId: state.teams[1].id,
       activeChallengeChoiceOptionIndex: 1,
+      currentRoundLeaderTeamId: state.teams[0].id,
     };
     const completion = completeChallenge(finished);
     expect(completion.state.activeChallengeId).toBeNull();
+    expect(completion.state.currentRoundLeaderTeamId).toBe(state.teams[1].id);
     const reverted = undoLastAction(completion.state, completion.undoAction);
     expect(reverted.activeChallengeId).toBe(challenge.id);
     expect(reverted.activeChallengeChoiceTeamId).toBe(state.teams[1].id);
     expect(reverted.activeChallengeChoiceOptionIndex).toBe(1);
+    expect(reverted.currentRoundLeaderTeamId).toBe(state.teams[0].id);
   });
 });

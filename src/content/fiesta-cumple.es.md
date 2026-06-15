@@ -12,42 +12,21 @@ summary: Un set inicial de retos, giros y reglas para dirigir una fiesta de cump
 - Gana el equipo con mayor puntuacion al cerrar la ultima ronda.
 
 ## Retos:trivia
-- title: Trivia doble
+- title: Preguna de Trivial a elegir
   prompt: Responde la pregunta correcta segun la opcion elegida.
-  multipleChoice:
-    options:
-      - Marte
-      - Venus
-      - Jupiter
-      - Saturno
-    answerIndex: 0
   preQuestion:
-    prompt: Quereis pregunta de ciencias o de literatura?
+    prompt: ¿Queréis pregunta de (A) Mecánica del Automóvil o (B) Cyberseguridad?
     options:
-      - label: Ciencias
+      - label: (A) Mecánica del Automóvil
         challenge:
           prompt: Que planeta se conoce como el planeta rojo?
-          multipleChoice:
-            options:
-              - Marte
-              - Venus
-              - Jupiter
-              - Saturno
-            answerIndex: 0
           rules:
             - Responde un unico representante.
           points: 100
           time: 60
-      - label: Literatura
+      - label: (B) Cyberseguridad
         challenge:
           prompt: Quien escribio Don Quijote de la Mancha?
-          multipleChoice:
-            options:
-              - Miguel de Cervantes
-              - Federico Garcia Lorca
-              - Pablo Neruda
-              - Benito Perez Galdos
-            answerIndex: 0
           rules:
             - Responde un unico representante.
           points: 100
@@ -139,3 +118,6 @@ summary: Un set inicial de retos, giros y reglas para dirigir una fiesta de cump
 - title: Silencio tactico
   description: El equipo que va primero pierde su siguiente turno estrategico.
   effectType: skip_turn
+- title: Relevo relampago
+  description: El lider de la ronda salta al siguiente equipo en el orden actual.
+  effectType: shift_round_leader

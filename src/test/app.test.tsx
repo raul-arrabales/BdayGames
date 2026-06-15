@@ -1,8 +1,9 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
 import { parseGamePack } from '../lib/content';
+import { createPackFromMarkdown } from '../lib/gamePacks';
 import { createInitialState, createMember } from '../lib/gameState';
 import { PERSISTED_EVENT_VERSION, STORAGE_KEY } from '../lib/storage';
 import rawPack from '../content/fiesta-cumple.es.md?raw';
@@ -10,7 +11,33 @@ import rawPack from '../content/fiesta-cumple.es.md?raw';
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  vi.restoreAllMocks();
 });
+
+const triviaPackMarkdown = `---
+id: trivia-solution-pack
+title: Pack de Prueba Trivia
+locale: es
+---
+
+## Reglas
+- Una persona responde.
+
+## Retos:trivia
+- title: Pregunta de prueba
+  prompt: Cual es la respuesta correcta?
+  rules:
+    - Una persona responde.
+  points: 100
+  time: 30
+  multipleChoice:
+    options:
+      - Correcta
+      - Incorrecta A
+      - Incorrecta B
+      - Incorrecta C
+    answerIndex: 0
+`;
 
 describe('App', () => {
   it('shows the landing chooser and can start from a built-in pack', async () => {
@@ -37,6 +64,41 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Ningun reto activo' })).toBeInTheDocument();
     expect(document.querySelectorAll('.score-card')).toHaveLength(2);
+  });
+
+  it('lets the operator draw the starting team for a new round', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const state = {
+      ...createInitialState(pack),
+      screen: 'dashboard' as const,
+      currentRoundLeaderTeamId: null,
+    };
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state,
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    expect(screen.getByRole('button', { name: 'Sorteo aleatorio' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Sorteo aleatorio' }));
+    await waitFor(() => {
+      expect(document.querySelector('.round-progress-team-badge')).toHaveTextContent('Equipo Sol');
+    });
+
+    expect(screen.queryByRole('button', { name: 'Sorteo aleatorio' })).not.toBeInTheDocument();
   });
 
   it('offers resume for a saved game and restores the saved flow', async () => {
@@ -67,8 +129,8 @@ describe('App', () => {
 
   it('shows timer controls for an active challenge', async () => {
     const user = userEvent.setup();
-    const pack = parseGamePack(rawPack);
-    const challenge = pack.challenges.find((entry) => !entry.preQuestion) ?? pack.challenges[0];
+    const pack = createPackFromMarkdown(triviaPackMarkdown, 'trivia-solution.md').pack;
+    const challenge = pack.challenges[0];
 
     window.localStorage.setItem(
       STORAGE_KEY,
@@ -83,8 +145,8 @@ describe('App', () => {
           challengeTimerRunning: false,
         },
         undoAction: null,
-        packMarkdown: rawPack,
-        packFileName: 'fiesta-cumple.es.md',
+        packMarkdown: triviaPackMarkdown,
+        packFileName: 'trivia-solution.md',
       }),
     );
 
@@ -365,7 +427,7 @@ describe('App', () => {
   it('resolves a pre-question challenge by choosing a team and an option', async () => {
     const user = userEvent.setup();
     const pack = parseGamePack(rawPack);
-    const challenge = pack.challenges[0];
+    const challenge = pack.challenges.find((entry) => entry.preQuestion) ?? pack.challenges[0];
     const state = createInitialState(pack);
 
     window.localStorage.setItem(
@@ -391,19 +453,20 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
 
-    expect(screen.getByRole('heading', { name: 'Trivia doble' })).toBeInTheDocument();
-    expect(screen.getByText('Quereis pregunta de ciencias o de literatura?')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Equipo Sol' }));
-    await user.click(screen.getByRole('button', { name: 'Ciencias' }));
+    expect(screen.getByRole('heading', { name: challenge.title })).toBeInTheDocument();
+    expect(screen.getByText(challenge.preQuestion?.prompt ?? '')).toBeInTheDocument();
+    const prequestionPanel = screen.getByText(challenge.preQuestion?.prompt ?? '').closest('.prequestion-panel') as HTMLElement | null;
+    expect(prequestionPanel).not.toBeNull();
+    await user.click(within(prequestionPanel!).getByRole('button', { name: 'Equipo Sol' }));
+    await user.click(screen.getByRole('button', { name: challenge.preQuestion?.options[0].label ?? '' }));
 
-    expect(screen.getByText('Que planeta se conoce como el planeta rojo?')).toBeInTheDocument();
+    expect(screen.getByText(challenge.preQuestion?.options[0].challenge.prompt ?? '')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Iniciar' })).toBeInTheDocument();
-    expect(document.querySelector('.trivia-question-hero')).toBeInTheDocument();
   });
 
   it('reveals the trivia solution after the timer ends', async () => {
     const user = userEvent.setup();
-    const pack = parseGamePack(rawPack);
+    const pack = createPackFromMarkdown(triviaPackMarkdown, 'trivia-solution.md').pack;
     const challenge = pack.challenges[0];
     const state = createInitialState(pack);
 
@@ -423,8 +486,8 @@ describe('App', () => {
           challengeTimerRunning: false,
         },
         undoAction: null,
-        packMarkdown: rawPack,
-        packFileName: 'fiesta-cumple.es.md',
+        packMarkdown: triviaPackMarkdown,
+        packFileName: 'trivia-solution.md',
       }),
     );
 
@@ -433,17 +496,17 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
 
-    expect(screen.getByRole('heading', { name: /Que planeta se conoce como el planeta rojo\?/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: challenge.prompt })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ver solucion' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Ver solucion' }));
 
     expect(screen.getByText('Solucion')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Marte' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Correcta' })).toBeInTheDocument();
   });
 
   it('can stop the timer early and expose the solution button', async () => {
     const user = userEvent.setup();
-    const pack = parseGamePack(rawPack);
+    const pack = createPackFromMarkdown(triviaPackMarkdown, 'trivia-solution.md').pack;
     const challenge = pack.challenges[0];
     const state = createInitialState(pack);
 
@@ -463,8 +526,8 @@ describe('App', () => {
           challengeTimerRunning: true,
         },
         undoAction: null,
-        packMarkdown: rawPack,
-        packFileName: 'fiesta-cumple.es.md',
+        packMarkdown: triviaPackMarkdown,
+        packFileName: 'trivia-solution.md',
       }),
     );
 
