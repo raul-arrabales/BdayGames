@@ -56,6 +56,15 @@ summary: Torneo con pruebas inspiradas en los juegos rusos de Sobrinov
   time: 45
 
 
+## Retos:duel
+- title: El Huevo Imposible
+  prompt: Consigue que el huevo (de gomaespuma) entre en el jarrón después de rebotar una única vez en el suelo.
+  rules:
+    - Cada equipo deberá demostrar precisión, control y un poco de suerte para superar este desafío. El huevo debe golpear primero el suelo y, tras el rebote, acabar dentro del jarrón. Los equipos se turnarán lanzamiento a lanzamiento hasta que uno consiga 3 aciertos.
+  points: 300
+  time: 30
+
+
 ## Sorpresas
 - title: Robo elegante
   description: El equipo lider roba temporalmente a la ultima persona reclutada por otro equipo.
