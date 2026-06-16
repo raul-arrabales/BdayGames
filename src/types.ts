@@ -121,6 +121,7 @@ export interface EventState {
   draftDirection: 'forward' | 'reverse';
   currentTurnTeamId: string | null;
   currentRoundLeaderTeamId: string | null;
+  pendingInitialRoundLeaderReveal: boolean;
   picks: DraftPick[];
   currentRound: number;
   activeChallengeId: string | null;

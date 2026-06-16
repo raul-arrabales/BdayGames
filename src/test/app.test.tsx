@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
@@ -12,6 +12,7 @@ afterEach(() => {
   cleanup();
   window.localStorage.clear();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 const triviaPackMarkdown = `---
@@ -49,31 +50,43 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /Fiesta Familiar de Cumpleanos/ }));
 
-    expect(await screen.findByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
   });
 
   it('can auto-fill a quick two-team setup from the setup screen', async () => {
-    const user = userEvent.setup();
+    vi.useFakeTimers();
     render(<App />);
 
-    await user.click(screen.getByRole('button', { name: /Fiesta Familiar de Cumpleanos/ }));
-    expect(await screen.findByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Fiesta Familiar de Cumpleanos/ }));
+    expect(screen.getByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Rellenar prueba 2x4' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rellenar prueba 2x4' }));
 
-    expect(await screen.findByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sortea qué equipo empieza' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Panel del juego' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sorteo aleatorio' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(screen.getByRole('heading', { name: /Empieza/ })).toBeInTheDocument();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
+
+    expect(screen.getByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Ningun reto activo' })).toBeInTheDocument();
     expect(document.querySelectorAll('.score-card')).toHaveLength(2);
   });
 
   it('lets the operator draw the starting team for a new round', async () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0);
-    const user = userEvent.setup();
+    vi.useFakeTimers();
     const pack = parseGamePack(rawPack);
     const state = {
       ...createInitialState(pack),
       screen: 'dashboard' as const,
       currentRoundLeaderTeamId: null,
+      pendingInitialRoundLeaderReveal: true,
     };
 
     window.localStorage.setItem(
@@ -89,14 +102,19 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+    expect(screen.getByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar partida' }));
 
-    expect(screen.getByRole('button', { name: 'Sorteo aleatorio' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Sorteo aleatorio' }));
-    await waitFor(() => {
-      expect(document.querySelector('.round-progress-team-badge')).toHaveTextContent('Equipo Sol');
+    fireEvent.click(screen.getByRole('button', { name: 'Equipo Sol' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
     });
+    expect(screen.getByRole('heading', { name: /Empieza/ })).toBeInTheDocument();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
+
+    expect(document.querySelector('.round-progress-team-badge')).toHaveTextContent('Equipo Sol');
 
     expect(screen.queryByRole('button', { name: 'Sorteo aleatorio' })).not.toBeInTheDocument();
   });
@@ -124,7 +142,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
 
-    expect(await screen.findByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
   });
 
   it('shows timer controls for an active challenge', async () => {
@@ -152,7 +170,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
 
     expect(await screen.findByRole('button', { name: 'Iniciar' })).toBeInTheDocument();
@@ -164,27 +182,38 @@ describe('App', () => {
   });
 
   it('keeps the challenge library collapsed by default and lets the operator toggle it', async () => {
-    const user = userEvent.setup();
+    vi.useFakeTimers();
 
     render(<App />);
 
-    await user.click(screen.getByRole('button', { name: /Fiesta Familiar de Cumpleanos/ }));
-    expect(await screen.findByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Fiesta Familiar de Cumpleanos/ }));
+    expect(screen.getByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Rellenar prueba 2x4' }));
-    expect(await screen.findByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Rellenar prueba 2x4' }));
+    expect(screen.getByRole('heading', { name: 'Sortea qué equipo empieza' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sorteo aleatorio' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(screen.getByRole('heading', { name: /Empieza/ })).toBeInTheDocument();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
+
+    expect(screen.getByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
 
     const pack = parseGamePack(rawPack);
     const firstChallenge = pack.challenges[0];
 
     expect(screen.queryByText(firstChallenge.title)).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Abrir biblioteca de retos' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir biblioteca de retos' }));
 
     expect(screen.getByRole('button', { name: 'Contraer biblioteca' })).toBeInTheDocument();
     expect(screen.getByText(firstChallenge.title)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Contraer biblioteca' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Contraer biblioteca' }));
 
     expect(screen.queryByText(firstChallenge.title)).not.toBeInTheDocument();
   });
@@ -215,7 +244,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
 
     const steps = document.querySelectorAll('.round-progress-step');
@@ -281,7 +310,7 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Volver al juego' }));
 
-    expect(await screen.findByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Marcar como completado' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: finalChallenge.title })).toBeInTheDocument();
   });
@@ -327,6 +356,8 @@ describe('App', () => {
 
     expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+    await user.click(screen.getByRole('button', { name: 'Sorteo aleatorio' }));
+    expect(await screen.findByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
 
     const summaryList = screen.getByText('Resumen de puntos').closest('.score-summary')?.querySelector('.score-summary-list');
     expect(summaryList).not.toBeNull();
@@ -568,6 +599,7 @@ describe('App', () => {
 
     expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+    await user.click(screen.getByRole('button', { name: 'Sorteo aleatorio' }));
 
     const dialog = await screen.findByRole('dialog', { name: twist.title });
     expect(dialog).toBeInTheDocument();

@@ -8,8 +8,9 @@ import type {
   TwistCard,
 } from '../types';
 
-export const APP_STATE_VERSION = 6;
+export const APP_STATE_VERSION = 7;
 export const DEFAULT_CHALLENGE_TIME_SECONDS = 90;
+export const INITIAL_ROUND_LEADER_REVEAL_MS = 10_000;
 
 const QUICK_SETUP_MEMBER_NAMES = [
   'Luna',
@@ -55,6 +56,7 @@ export function createInitialState(gamePack: GamePack): EventState {
     draftDirection: 'forward',
     currentTurnTeamId: null,
     currentRoundLeaderTeamId: null,
+    pendingInitialRoundLeaderReveal: false,
     picks: [],
     currentRound: 1,
     activeChallengeId: null,
@@ -154,6 +156,7 @@ export function fillQuickSetupTeams(state: EventState): EventState {
     draftDirection: 'forward',
     currentTurnTeamId: null,
     currentRoundLeaderTeamId: null,
+    pendingInitialRoundLeaderReveal: true,
     picks: [],
     currentRound: 1,
     activeChallengeId: null,
@@ -256,6 +259,7 @@ export function assignMemberToTeam(state: EventState, memberId: string, teamId: 
     draftRound: hasNext ? state.draftRound : state.draftRound + 1,
     draftDirection: hasNext ? state.draftDirection : state.draftDirection === 'forward' ? 'reverse' : 'forward',
     screen: unassignedAfterPick === 0 ? 'dashboard' : state.screen,
+    pendingInitialRoundLeaderReveal: unassignedAfterPick === 0 ? true : state.pendingInitialRoundLeaderReveal,
     lastUpdatedAt: now(),
   };
 }
@@ -280,6 +284,8 @@ export function setCurrentRoundLeaderTeam(state: EventState, teamId: string | nu
   return {
     ...state,
     currentRoundLeaderTeamId: teamId,
+    pendingInitialRoundLeaderReveal:
+      teamId === null ? state.pendingInitialRoundLeaderReveal : false,
     lastUpdatedAt: now(),
   };
 }

@@ -6,10 +6,11 @@ interface TeamRaffleProps {
   copy: Dictionary;
   teams: Team[];
   prompt: string;
+  isLocked?: boolean;
   onSelectTeam: (teamId: string) => void;
 }
 
-export function TeamRaffle({ copy, teams, prompt, onSelectTeam }: TeamRaffleProps) {
+export function TeamRaffle({ copy, teams, prompt, isLocked = false, onSelectTeam }: TeamRaffleProps) {
   const [rollingTeamId, setRollingTeamId] = useState<string | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const rollTimerRef = useRef<number | null>(null);
@@ -60,17 +61,17 @@ export function TeamRaffle({ copy, teams, prompt, onSelectTeam }: TeamRaffleProp
         {teams.map((team) => (
           <button
             key={team.id}
-            className={`team-chip prequestion-team-chip ${rollingTeamId === team.id ? 'is-rolling' : ''}`}
+            className={`team-chip prequestion-team-chip ${rollingTeamId === team.id ? 'is-rolling' : ''} ${isLocked && rollingTeamId === team.id ? 'is-selected' : ''}`.trim()}
             style={{ background: team.color }}
-            disabled={isRolling}
+            disabled={isRolling || isLocked}
             onClick={() => onSelectTeam(team.id)}
           >
             {team.name}
           </button>
-        ))}
+      ))}
       </div>
       <div className="action-row">
-        <button className="primary-button" disabled={isRolling || teams.length === 0} onClick={rollForTeam}>
+        <button className="primary-button" disabled={isRolling || isLocked || teams.length === 0} onClick={rollForTeam}>
           {copy.randomTeamChoice}
         </button>
       </div>

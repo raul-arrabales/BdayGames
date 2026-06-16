@@ -2,7 +2,7 @@ import type { PersistedEvent } from '../types';
 import { APP_STATE_VERSION, DEFAULT_CHALLENGE_TIME_SECONDS } from './gameState';
 
 const storageNamespace = import.meta.env.MODE === 'playtest' ? 'playtest' : '';
-export const PERSISTED_EVENT_VERSION = 7;
+export const PERSISTED_EVENT_VERSION = 8;
 
 export const STORAGE_KEY = storageNamespace ? `bday-games-event:${storageNamespace}` : 'bday-games-event';
 
@@ -28,6 +28,9 @@ function normalizePersistedState(persisted: PersistedEvent): PersistedEvent {
   const secondsLeft = Number.isFinite(state.challengeTimerSecondsLeft)
     ? Math.max(0, Math.floor(state.challengeTimerSecondsLeft))
     : duration;
+  const hasValidLeader =
+    typeof state.currentRoundLeaderTeamId === 'string' &&
+    state.teams.some((team) => team.id === state.currentRoundLeaderTeamId);
 
   return {
     ...persisted,
@@ -47,10 +50,8 @@ function normalizePersistedState(persisted: PersistedEvent): PersistedEvent {
       challengeTimerSecondsLeft: Math.min(secondsLeft, duration),
       challengeTimerRunning: Boolean(state.challengeTimerRunning) && secondsLeft > 0,
       currentRoundLeaderTeamId:
-        typeof state.currentRoundLeaderTeamId === 'string' &&
-        state.teams.some((team) => team.id === state.currentRoundLeaderTeamId)
-          ? state.currentRoundLeaderTeamId
-          : null,
+        hasValidLeader ? state.currentRoundLeaderTeamId : null,
+      pendingInitialRoundLeaderReveal: Boolean(state.pendingInitialRoundLeaderReveal) && !hasValidLeader,
     },
   };
 }
