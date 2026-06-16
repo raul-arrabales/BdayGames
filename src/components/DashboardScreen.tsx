@@ -29,8 +29,6 @@ interface DashboardScreenProps {
   canUndo: boolean;
   onSelectChallenge: (challengeId: string) => void;
   onSelectCurrentRoundTeam: (teamId: string) => void;
-  onSelectPreQuestionTeam: (teamId: string) => void;
-  onClearPreQuestionSelection: () => void;
   onSelectPreQuestionOption: (optionIndex: number) => void;
   onAwardPoints: (teamId: string, memberId: string, points: number) => void;
   onAwardTeamPoints: (teamId: string, points: number) => void;
@@ -71,8 +69,6 @@ export function DashboardScreen({
   canUndo,
   onSelectChallenge,
   onSelectCurrentRoundTeam,
-  onSelectPreQuestionTeam,
-  onClearPreQuestionSelection,
   onSelectPreQuestionOption,
   onAwardPoints,
   onAwardTeamPoints,
@@ -105,6 +101,7 @@ export function DashboardScreen({
       triviaAnswerIndex !== null,
   );
   const canRevealSolution = Boolean(triviaMultipleChoice && timerSecondsLeft <= 0);
+  const twistButtonLabel = preQuestion ? copy.preQuestionTwistChoice : copy.randomTwist;
   useEffect(() => {
     if (activeTwist) {
       setIsTwistModalOpen(true);
@@ -168,7 +165,7 @@ export function DashboardScreen({
           </div>
           <div className="action-row">
             <button className="secondary-button" onClick={openTwistModal}>
-              {copy.randomTwist}
+              {twistButtonLabel}
             </button>
             <button className="ghost-button" disabled={!canUndo} onClick={onUndo}>
               {copy.undo}
@@ -180,43 +177,31 @@ export function DashboardScreen({
           <div className="active-card">
             {preQuestion && activeChallengeChoiceOptionIndex === null ? (
               <div className="prequestion-panel">
-              <div className="prequestion-header">
+                <div className="prequestion-header">
                   <div>
                     <p className="eyebrow">{copy.preQuestionLabel}</p>
                     <h3>{activeChallenge.title}</h3>
                   </div>
-                  {activeChallengeChoiceTeamId ? (
-                    <button className="ghost-button" onClick={onClearPreQuestionSelection}>
-                      {copy.changeTeam}
-                    </button>
-                  ) : null}
                 </div>
                 <p className="prequestion-prompt">{preQuestion.prompt}</p>
                 {activeChallengeChoiceTeamId ? (
-                  <div className="prequestion-choice-step">
-                    <p className="muted">
-                      {copy.selectedTeam}: <strong>{teams.find((team) => team.id === activeChallengeChoiceTeamId)?.name ?? copy.unknownTeam}</strong>
-                    </p>
-                    <div className="prequestion-option-grid">
-                      {preQuestion.options.map((option, index) => (
-                        <button
-                          key={`${option.label}-${index}`}
-                          className="prequestion-option-card"
-                          onClick={() => onSelectPreQuestionOption(index)}
-                        >
-                          <strong>{option.label}</strong>
-                        </button>
-                      ))}
-                    </div>
+                  <p className="badge selected-team-badge">
+                    {copy.selectedTeam}: {teams.find((team) => team.id === activeChallengeChoiceTeamId)?.name ?? copy.unknownTeam}
+                  </p>
+                ) : null}
+                <div className="prequestion-choice-step">
+                  <div className="prequestion-option-grid">
+                    {preQuestion.options.map((option, index) => (
+                      <button
+                        key={`${option.label}-${index}`}
+                        className="prequestion-option-card"
+                        onClick={() => onSelectPreQuestionOption(index)}
+                      >
+                        <strong>{option.label}</strong>
+                      </button>
+                    ))}
                   </div>
-                ) : (
-                  <TeamRaffle
-                    copy={copy}
-                    teams={teams}
-                    prompt={copy.chooseTeamForPreQuestion}
-                    onSelectTeam={onSelectPreQuestionTeam}
-                  />
-                )}
+                </div>
               </div>
             ) : (
               <>

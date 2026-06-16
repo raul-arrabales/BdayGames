@@ -96,6 +96,7 @@ export const strings = {
     preQuestionLabel: 'Pregunta previa',
     chooseTeamForPreQuestion: 'Primero, elige qué equipo va a decidir la opcion.',
     randomTeamChoice: 'Sorteo aleatorio',
+    preQuestionTwistChoice: 'Relevo relampago',
     changeTeam: 'Cambiar equipo',
     selectedTeam: 'Equipo elegido',
     unknownTeam: 'Equipo desconocido',

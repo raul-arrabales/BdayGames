@@ -488,7 +488,8 @@ describe('App', () => {
     expect(screen.getByText(challenge.preQuestion?.prompt ?? '')).toBeInTheDocument();
     const prequestionPanel = screen.getByText(challenge.preQuestion?.prompt ?? '').closest('.prequestion-panel') as HTMLElement | null;
     expect(prequestionPanel).not.toBeNull();
-    await user.click(within(prequestionPanel!).getByRole('button', { name: 'Equipo Sol' }));
+    expect(within(prequestionPanel!).queryByRole('button', { name: 'Sorteo aleatorio' })).not.toBeInTheDocument();
+    expect(within(prequestionPanel!).getByRole('button', { name: challenge.preQuestion?.options[0].label ?? '' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: challenge.preQuestion?.options[0].label ?? '' }));
 
     expect(screen.getByText(challenge.preQuestion?.options[0].challenge.prompt ?? '')).toBeInTheDocument();
@@ -616,5 +617,47 @@ describe('App', () => {
 
     expect(screen.queryByRole('dialog', { name: twist.title })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Revelar carta al azar' })).toBeInTheDocument();
+  });
+
+  it('forces a shift-round-leader twist when revealing during a pre-question', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const preQuestionChallenge = pack.challenges.find((entry) => entry.preQuestion);
+    const twist = pack.twists.find((entry) => entry.effectType === 'shift_round_leader');
+    const state = createInitialState(pack);
+
+    expect(preQuestionChallenge).toBeDefined();
+    expect(twist).toBeDefined();
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          activeChallengeId: preQuestionChallenge!.id,
+          currentRoundLeaderTeamId: state.teams[0].id,
+          challengeTimerDurationSeconds: preQuestionChallenge!.time,
+          challengeTimerSecondsLeft: preQuestionChallenge!.time,
+          challengeTimerRunning: false,
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+    await user.click(screen.getByRole('button', { name: 'Relevo relampago' }));
+
+    const dialog = await screen.findByRole('dialog', { name: twist!.title });
+    expect(dialog).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Aplicar efecto' }));
+
+    expect(document.querySelector('.round-progress-team-badge')).toHaveTextContent('Equipo Fiesta');
   });
 });

@@ -9,7 +9,6 @@ import { builtInGamePacks, createPackFromMarkdown, resolvePersistedPack, type Pa
 import { resolveChallengeCard } from './lib/content';
 import {
   DEFAULT_CHALLENGE_TIME_SECONDS,
-  clearChallengePreQuestionSelection,
   applyManualAllMembersScore,
   applyManualMemberScore,
   applyTwist,
@@ -33,7 +32,6 @@ import {
   resetChallengeTimer,
   stopChallengeTimer,
   selectChallengePreQuestionOption,
-  selectChallengePreQuestionTeam,
   toggleChallengeSolutionReveal,
   startChallengeTimer,
   tickChallengeTimer,
@@ -576,12 +574,6 @@ function App() {
             onSelectCurrentRoundTeam={(teamId) =>
               updateState((current) => setCurrentRoundLeaderTeam(current, teamId))
             }
-            onSelectPreQuestionTeam={(teamId) =>
-              updateState((current) => selectChallengePreQuestionTeam(current, teamId))
-            }
-            onClearPreQuestionSelection={() =>
-              updateState((current) => clearChallengePreQuestionSelection(current))
-            }
             onSelectPreQuestionOption={(optionIndex) =>
               setEventState((current) => {
                 const challenge = gamePack.challenges.find((entry) => entry.id === current.activeChallengeId);
@@ -640,7 +632,19 @@ function App() {
             onStopTimer={() => updateState((current) => stopChallengeTimer(current))}
             onRevealSolution={() => updateState((current) => toggleChallengeSolutionReveal(current))}
             onChangeTimerVolume={setTimerVolume}
-            onRevealTwist={() => updateState((current) => revealRandomTwist(current, gamePack.twists))}
+            onRevealTwist={() =>
+              updateState((current) => {
+                const isWaitingOnPreQuestion =
+                  Boolean(activeChallenge?.preQuestion) && current.activeChallengeChoiceOptionIndex === null;
+                const forcedShiftTwists = gamePack.twists.filter(
+                  (twist) => twist.effectType === 'shift_round_leader',
+                );
+
+                return isWaitingOnPreQuestion && forcedShiftTwists.length > 0
+                  ? revealRandomTwist(current, forcedShiftTwists)
+                  : revealRandomTwist(current, gamePack.twists);
+              })
+            }
             onApplyTwist={() =>
               activeTwist &&
               setEventState((current) => {

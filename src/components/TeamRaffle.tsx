@@ -7,10 +7,18 @@ interface TeamRaffleProps {
   teams: Team[];
   prompt: string;
   isLocked?: boolean;
+  showRandomButton?: boolean;
   onSelectTeam: (teamId: string) => void;
 }
 
-export function TeamRaffle({ copy, teams, prompt, isLocked = false, onSelectTeam }: TeamRaffleProps) {
+export function TeamRaffle({
+  copy,
+  teams,
+  prompt,
+  isLocked = false,
+  showRandomButton = true,
+  onSelectTeam,
+}: TeamRaffleProps) {
   const [rollingTeamId, setRollingTeamId] = useState<string | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const rollTimerRef = useRef<number | null>(null);
@@ -70,11 +78,13 @@ export function TeamRaffle({ copy, teams, prompt, isLocked = false, onSelectTeam
           </button>
       ))}
       </div>
-      <div className="action-row">
-        <button className="primary-button" disabled={isRolling || isLocked || teams.length === 0} onClick={rollForTeam}>
-          {copy.randomTeamChoice}
-        </button>
-      </div>
+      {showRandomButton ? (
+        <div className="action-row">
+          <button className="primary-button" disabled={isRolling || isLocked || teams.length === 0} onClick={rollForTeam}>
+            {copy.randomTeamChoice}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
