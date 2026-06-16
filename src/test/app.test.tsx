@@ -455,6 +455,40 @@ describe('App', () => {
     expect(screen.getByText('Ya se asignaron los puntos de este reto')).toBeInTheDocument();
   });
 
+  it('renders non-trivia active challenges with a highlighted title and description block', async () => {
+    const pack = parseGamePack(rawPack);
+    const challenge = pack.challenges.find((entry) => entry.category !== 'trivia' && !entry.preQuestion) ?? pack.challenges[0];
+    const state = createInitialState(pack);
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          activeChallengeId: challenge.id,
+          challengeTimerDurationSeconds: challenge.time,
+          challengeTimerSecondsLeft: challenge.time,
+          challengeTimerRunning: false,
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    const hero = screen.getByText(challenge.title).closest('.challenge-question-hero') as HTMLElement | null;
+    expect(hero).not.toBeNull();
+    expect(within(hero!).getByRole('heading', { name: challenge.title })).toBeInTheDocument();
+    expect(within(hero!).getByText(challenge.prompt)).toBeInTheDocument();
+  });
+
   it('resolves a pre-question challenge by choosing a team and an option', async () => {
     const user = userEvent.setup();
     const pack = parseGamePack(rawPack);

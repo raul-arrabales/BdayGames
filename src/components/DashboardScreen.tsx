@@ -217,10 +217,10 @@ export function DashboardScreen({
                       <h3>{triviaQuestion}</h3>
                     </div>
                   ) : (
-                    <>
+                    <div className="challenge-question-hero">
                       <h3>{resolvedChallenge?.title ?? activeChallenge.title}</h3>
                       <p>{triviaQuestion}</p>
-                    </>
+                    </div>
                   )}
                 </div>
                 {triviaMultipleChoice ? (
