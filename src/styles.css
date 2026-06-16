@@ -217,6 +217,48 @@ input[type="color"]::-moz-color-swatch {
   align-items: center;
 }
 
+.manual-adjustment-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.95rem 1.1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(135deg, rgba(0, 179, 255, 0.12), rgba(255, 255, 255, 0.05)),
+    rgba(255, 255, 255, 0.05);
+  color: #fff7ed;
+  box-shadow: 0 12px 30px rgba(8, 17, 29, 0.14);
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.manual-adjustment-toggle:focus-visible {
+  outline: 3px solid rgba(0, 179, 255, 0.65);
+  outline-offset: 2px;
+}
+
+.manual-adjustment-toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  flex: none;
+}
+
+.manual-adjustment-toggle-icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
 .manual-adjustment-form {
   display: grid;
   gap: 0.8rem;
@@ -323,6 +365,11 @@ input[type="color"]::-moz-color-swatch {
 .award-grid {
   display: grid;
   gap: 1.25rem;
+}
+
+.award-grid {
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  align-items: stretch;
 }
 
 .screen-grid.two-column {
@@ -946,6 +993,85 @@ input[type="color"]::-moz-color-swatch {
   width: 100%;
 }
 
+.timer-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.95rem 1.1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(135deg, rgba(255, 211, 61, 0.12), rgba(255, 255, 255, 0.05)),
+    rgba(255, 255, 255, 0.05);
+  color: #fff7ed;
+  box-shadow: 0 12px 30px rgba(8, 17, 29, 0.14);
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.timer-toggle:focus-visible {
+  outline: 3px solid rgba(255, 211, 61, 0.7);
+  outline-offset: 2px;
+}
+
+.timer-toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  flex: none;
+}
+
+.timer-toggle-icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.challenge-actions-panel {
+  gap: 0.9rem;
+}
+
+.challenge-actions-toggle {
+  background:
+    linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(255, 255, 255, 0.05)),
+    rgba(255, 255, 255, 0.05);
+}
+
+.challenge-actions-toggle:focus-visible {
+  outline-color: rgba(255, 107, 53, 0.72);
+}
+
+.challenge-actions-toggle-icon {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.challenge-actions-body {
+  display: grid;
+  gap: 0.9rem;
+  width: 100%;
+  justify-self: stretch;
+}
+
+.challenge-actions-body .award-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 18rem));
+  justify-content: center;
+  justify-items: stretch;
+}
+
+.challenge-actions-body .action-row {
+  width: 100%;
+  justify-content: flex-end;
+}
+
 .timer-card {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
@@ -957,6 +1083,12 @@ input[type="color"]::-moz-color-swatch {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 16px 40px rgba(8, 17, 29, 0.18);
+}
+
+.timer-card.challenge-actions-card {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  justify-items: stretch;
 }
 
 .timer-display {

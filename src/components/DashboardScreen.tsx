@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useState, type CSSProperties } from 'react';
 import type { Dictionary } from '../lib/i18n';
 import type { ChallengeCard, Member, Team, TwistCard } from '../types';
 import { ChallengeLibrary } from './ChallengeLibrary';
@@ -86,6 +86,10 @@ export function DashboardScreen({
   onFinish,
 }: DashboardScreenProps) {
   const [isTwistModalOpen, setIsTwistModalOpen] = useState(false);
+  const [isChallengeActionsExpanded, setIsChallengeActionsExpanded] = useState(false);
+  const [isTimerExpanded, setIsTimerExpanded] = useState(false);
+  const timerPanelId = useId();
+  const challengeActionsPanelId = useId();
   const timerProgress = timerDurationSeconds > 0 ? timerSecondsLeft / timerDurationSeconds : 0;
   const timerEmptyProgress = 1 - timerProgress;
   const timerUrgencyClass =
@@ -266,90 +270,142 @@ export function DashboardScreen({
                   </ul>
                 </div>
                 <div className="timer-panel">
-                  <div className="timer-card">
-                    <div className="timer-display">
-                      <div
-                        className={`timer-ring ${timerUrgencyClass}`.trim()}
-                        aria-live="polite"
-                        style={{ '--timer-empty-progress': timerEmptyProgress } as CSSProperties}
-                      >
-                        <div className="timer-ring-core" />
-                        <span>{timerSecondsLeft}s</span>
+                  <button
+                    aria-controls={timerPanelId}
+                    aria-expanded={isTimerExpanded}
+                    aria-label={isTimerExpanded ? copy.hideTimer : copy.showTimer}
+                    className="timer-toggle"
+                    type="button"
+                    onClick={() => setIsTimerExpanded((value) => !value)}
+                  >
+                    <span>{copy.timer}</span>
+                    <span className="timer-toggle-icon" aria-hidden="true">
+                      {isTimerExpanded ? (
+                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                          <path d="M7 14l5-5 5 5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                          <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                        </svg>
+                      )}
+                    </span>
+                  </button>
+                  {isTimerExpanded ? (
+                    <div className="timer-card" id={timerPanelId}>
+                      <div className="timer-display">
+                        <div
+                          className={`timer-ring ${timerUrgencyClass}`.trim()}
+                          aria-live="polite"
+                          style={{ '--timer-empty-progress': timerEmptyProgress } as CSSProperties}
+                        >
+                          <div className="timer-ring-core" />
+                          <span>{timerSecondsLeft}s</span>
+                        </div>
+                        <div className="timer-meta">
+                          <strong>{timerRunning ? copy.pauseTimer : copy.startTimer}</strong>
+                          <span>
+                            {timerSecondsLeft}/{timerDurationSeconds}s
+                          </span>
+                        </div>
                       </div>
-                      <div className="timer-meta">
-                        <strong>{timerRunning ? copy.pauseTimer : copy.startTimer}</strong>
-                        <span>
-                          {timerSecondsLeft}/{timerDurationSeconds}s
-                        </span>
+                      <div className="timer-controls">
+                        <div className="timer-action-grid">
+                          <button className="primary-button" disabled={timerRunning || timerSecondsLeft <= 0} onClick={onStartTimer}>
+                            {copy.startTimer}
+                          </button>
+                          <button className="secondary-button" disabled={!timerRunning} onClick={onPauseTimer}>
+                            {copy.pauseTimer}
+                          </button>
+                          <button className="ghost-button" onClick={onResetTimer}>
+                            {copy.resetTimer}
+                          </button>
+                          <button className="ghost-button" disabled={timerSecondsLeft <= 0} onClick={onStopTimer}>
+                            {copy.stopTimer}
+                          </button>
+                        </div>
+                        <label className="timer-volume-control">
+                          <span>{copy.timerVolume}</span>
+                          <input
+                            aria-label={copy.timerVolume}
+                            className="timer-volume-slider"
+                            max="1"
+                            min="0"
+                            step="0.05"
+                            type="range"
+                            value={timerVolume}
+                            onChange={(event) => onChangeTimerVolume(Number(event.target.value))}
+                          />
+                          <strong>{Math.round(timerVolume * 100)}%</strong>
+                        </label>
                       </div>
                     </div>
-                    <div className="timer-controls">
-                      <div className="timer-action-grid">
-                        <button className="primary-button" disabled={timerRunning || timerSecondsLeft <= 0} onClick={onStartTimer}>
-                          {copy.startTimer}
-                        </button>
-                        <button className="secondary-button" disabled={!timerRunning} onClick={onPauseTimer}>
-                          {copy.pauseTimer}
-                        </button>
-                        <button className="ghost-button" onClick={onResetTimer}>
-                          {copy.resetTimer}
-                        </button>
-                        <button className="ghost-button" disabled={timerSecondsLeft <= 0} onClick={onStopTimer}>
-                          {copy.stopTimer}
-                        </button>
-                      </div>
-                      <label className="timer-volume-control">
-                        <span>{copy.timerVolume}</span>
-                        <input
-                          aria-label={copy.timerVolume}
-                          className="timer-volume-slider"
-                          max="1"
-                          min="0"
-                          step="0.05"
-                          type="range"
-                          value={timerVolume}
-                          onChange={(event) => onChangeTimerVolume(Number(event.target.value))}
-                        />
-                        <strong>{Math.round(timerVolume * 100)}%</strong>
-                      </label>
-                    </div>
-                  </div>
+                  ) : null}
                 </div>
-                <div className="award-grid">
-                  {teams.map((team) => (
-                    <article key={team.id} className="award-card" style={{ borderColor: team.color }}>
-                      <h4>{team.name}</h4>
-                      <div className="member-pills">
-                        {members
-                          .filter((member) => member.teamId === team.id)
-                          .map((member) => (
-                            <button
-                              key={member.id}
-                              disabled={challengeAwarded}
-                              onClick={() => onAwardPoints(team.id, member.id, resolvedChallenge?.points ?? activeChallenge.points)}
-                            >
-                              {member.name}
-                            </button>
+                <div className="timer-panel challenge-actions-panel">
+                  <button
+                    aria-controls={challengeActionsPanelId}
+                    aria-expanded={isChallengeActionsExpanded}
+                    aria-label={isChallengeActionsExpanded ? copy.hideChallengeActions : copy.showChallengeActions}
+                    className="timer-toggle challenge-actions-toggle"
+                    type="button"
+                    onClick={() => setIsChallengeActionsExpanded((value) => !value)}
+                  >
+                    <span>{copy.challengeActions}</span>
+                    <span className="timer-toggle-icon challenge-actions-toggle-icon" aria-hidden="true">
+                      {isChallengeActionsExpanded ? (
+                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                          <path d="M7 14l5-5 5 5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                          <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                        </svg>
+                      )}
+                    </span>
+                  </button>
+                  {isChallengeActionsExpanded ? (
+                    <div className="timer-card challenge-actions-card" id={challengeActionsPanelId}>
+                      <div className="challenge-actions-body">
+                        <div className="award-grid">
+                          {teams.map((team) => (
+                            <article key={team.id} className="award-card" style={{ borderColor: team.color }}>
+                              <h4>{team.name}</h4>
+                              <div className="member-pills">
+                                {members
+                                  .filter((member) => member.teamId === team.id)
+                                  .map((member) => (
+                                    <button
+                                      key={member.id}
+                                      disabled={challengeAwarded}
+                                      onClick={() => onAwardPoints(team.id, member.id, resolvedChallenge?.points ?? activeChallenge.points)}
+                                    >
+                                      {member.name}
+                                    </button>
+                                  ))}
+                              </div>
+                              <button
+                                className="secondary-button award-team-button"
+                                disabled={challengeAwarded || members.every((member) => member.teamId !== team.id)}
+                                onClick={() => onAwardTeamPoints(team.id, resolvedChallenge?.points ?? activeChallenge.points)}
+                              >
+                                {copy.awardWholeTeam}
+                              </button>
+                            </article>
                           ))}
+                        </div>
+                        {challengeAwarded ? <p className="muted">{copy.pointsAlreadyAssigned}</p> : null}
+                        <div className="action-row">
+                          <button className="primary-button" onClick={onCompleteChallenge}>
+                            {copy.markCompleted}
+                          </button>
+                          <button className="secondary-button" onClick={onFinish}>
+                            {copy.finishGame}
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        className="secondary-button award-team-button"
-                        disabled={challengeAwarded || members.every((member) => member.teamId !== team.id)}
-                        onClick={() => onAwardTeamPoints(team.id, resolvedChallenge?.points ?? activeChallenge.points)}
-                      >
-                        {copy.awardWholeTeam}
-                      </button>
-                    </article>
-                  ))}
-                </div>
-                {challengeAwarded ? <p className="muted">{copy.pointsAlreadyAssigned}</p> : null}
-                <div className="action-row">
-                  <button className="primary-button" onClick={onCompleteChallenge}>
-                    {copy.markCompleted}
-                  </button>
-                  <button className="secondary-button" onClick={onFinish}>
-                    {copy.finishGame}
-                  </button>
+                    </div>
+                  ) : null}
                 </div>
               </>
             )}

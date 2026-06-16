@@ -145,7 +145,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
   });
 
-  it('shows timer controls for an active challenge', async () => {
+  it('keeps the timer collapsed by default and reveals controls on demand', async () => {
     const user = userEvent.setup();
     const pack = createPackFromMarkdown(triviaPackMarkdown, 'trivia-solution.md').pack;
     const challenge = pack.challenges[0];
@@ -172,6 +172,11 @@ describe('App', () => {
 
     expect(screen.getByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    expect(screen.getByRole('button', { name: 'Mostrar temporizador' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Iniciar' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Mostrar temporizador' }));
 
     expect(await screen.findByRole('button', { name: 'Iniciar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Pausar' })).toBeDisabled();
@@ -298,6 +303,7 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
 
+    await user.click(screen.getByRole('button', { name: 'Mostrar asignación de puntos' }));
     await user.click(screen.getByRole('button', { name: 'Marcar como completado' }));
 
     expect(await screen.findByRole('heading', { name: 'Ganador' })).toBeInTheDocument();
@@ -311,8 +317,47 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Volver al juego' }));
 
     expect(screen.getByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Marcar como completado' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mostrar asignación de puntos' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Marcar como completado' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: finalChallenge.title })).toBeInTheDocument();
+  });
+
+  it('keeps the completion actions collapsed by default and reveals them on demand', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const state = createInitialState(pack);
+    const challenge = pack.challenges.find((entry) => !entry.preQuestion) ?? pack.challenges[0];
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          activeChallengeId: challenge.id,
+          challengeTimerDurationSeconds: challenge.time,
+          challengeTimerSecondsLeft: challenge.time,
+          challengeTimerRunning: false,
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    expect(screen.getByRole('button', { name: 'Mostrar asignación de puntos' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Marcar como completado' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Mostrar asignación de puntos' }));
+
+    expect(await screen.findByRole('button', { name: 'Marcar como completado' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finalizar juego' })).toBeInTheDocument();
   });
 
   it('applies a custom member score correction from the scoreboard', async () => {
@@ -371,7 +416,7 @@ describe('App', () => {
     expect(teamCard).not.toBeNull();
     await user.click(
       teamCard!.querySelector('button[name="toggle-manual-adjustment"]') ??
-        screen.getAllByRole('button', { name: 'Mostrar correccion personalizada' })[0],
+        screen.getAllByRole('button', { name: 'Mostrar ajuste manual' })[0],
     );
     await user.selectOptions(screen.getByLabelText('Miembro'), 'all');
     await user.clear(screen.getByLabelText('Puntos a aplicar'));
@@ -384,7 +429,7 @@ describe('App', () => {
     expect(screen.getByText(`${memberC.name}: 8`)).toBeInTheDocument();
     await user.click(
       teamCard!.querySelector('button[name="toggle-manual-adjustment"]') ??
-        screen.getByRole('button', { name: 'Ocultar correccion personalizada' }),
+        screen.getByRole('button', { name: 'Ocultar ajuste manual' }),
     );
     expect(screen.queryByLabelText('Miembro')).not.toBeInTheDocument();
   });
@@ -436,6 +481,7 @@ describe('App', () => {
 
     expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+    await user.click(screen.getByRole('button', { name: 'Mostrar asignación de puntos' }));
 
     const firstTeamCard = screen.getByRole('heading', { name: firstTeam.name, level: 4 }).closest('.award-card') as HTMLElement | null;
     expect(firstTeamCard).not.toBeNull();
@@ -527,6 +573,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: challenge.preQuestion?.options[0].label ?? '' }));
 
     expect(screen.getByText(challenge.preQuestion?.options[0].challenge.prompt ?? '')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Mostrar temporizador' }));
     expect(screen.getByRole('button', { name: 'Iniciar' })).toBeInTheDocument();
   });
 
@@ -602,6 +649,7 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
 
+    await user.click(screen.getByRole('button', { name: 'Mostrar temporizador' }));
     await user.click(screen.getByRole('button', { name: 'Parar' }));
 
     expect(screen.getByRole('button', { name: 'Ver solucion' })).toBeInTheDocument();

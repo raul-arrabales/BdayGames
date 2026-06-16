@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import type { Dictionary } from '../lib/i18n';
 import type { Member, Team } from '../types';
 
@@ -98,6 +98,7 @@ interface TeamScoreCardProps {
 
 function TeamScoreCard({ copy, team, teamMembers, onAdjustManualScore }: TeamScoreCardProps) {
   const [isManualAdjustmentOpen, setIsManualAdjustmentOpen] = useState(false);
+  const manualAdjustmentPanelId = useId();
 
   return (
     <article className="score-card" style={{ borderColor: team.color }}>
@@ -107,21 +108,37 @@ function TeamScoreCard({ copy, team, teamMembers, onAdjustManualScore }: TeamSco
       </div>
       <div className="manual-adjustment-toggle-row">
         <button
-          className={isManualAdjustmentOpen ? 'secondary-button' : 'ghost-button'}
+          aria-controls={manualAdjustmentPanelId}
+          aria-expanded={isManualAdjustmentOpen}
+          aria-label={isManualAdjustmentOpen ? copy.hideCustomAdjustment : copy.showCustomAdjustment}
+          className="manual-adjustment-toggle"
           name="toggle-manual-adjustment"
-          onClick={() => setIsManualAdjustmentOpen((current) => !current)}
           type="button"
+          onClick={() => setIsManualAdjustmentOpen((current) => !current)}
         >
-          {isManualAdjustmentOpen ? copy.hideCustomAdjustment : copy.showCustomAdjustment}
+          <span>{copy.customAdjustment}</span>
+          <span className="manual-adjustment-toggle-icon" aria-hidden="true">
+            {isManualAdjustmentOpen ? (
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M7 14l5-5 5 5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+              </svg>
+            )}
+          </span>
         </button>
       </div>
       {isManualAdjustmentOpen ? (
-        <ManualAdjustmentForm
-          copy={copy}
-          teamId={team.id}
-          teamMembers={teamMembers}
-          onSubmit={onAdjustManualScore}
-        />
+        <div id={manualAdjustmentPanelId}>
+          <ManualAdjustmentForm
+            copy={copy}
+            teamId={team.id}
+            teamMembers={teamMembers}
+            onSubmit={onAdjustManualScore}
+          />
+        </div>
       ) : null}
       <ul>
         {teamMembers.map((member) => (
