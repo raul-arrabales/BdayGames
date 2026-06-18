@@ -9,6 +9,7 @@ import { builtInGamePacks, createPackFromMarkdown, resolvePersistedPack, type Pa
 import { resolveChallengeCard } from './lib/content';
 import {
   DEFAULT_CHALLENGE_TIME_SECONDS,
+  INITIAL_ROUND_LEADER_REVEAL_MS,
   applyManualAllMembersScore,
   applyManualMemberScore,
   applyTwist,
@@ -49,7 +50,6 @@ import type { EventState, PersistedEvent, UndoAction } from './types';
 
 const defaultPack = builtInGamePacks[0];
 const TIMER_VOLUME_STORAGE_KEY = 'bday-games-timer-volume';
-const INITIAL_ROUND_LEADER_REVEAL_MS = 10_000;
 
 interface SavedSession {
   persisted: PersistedEvent;
@@ -202,6 +202,27 @@ function App() {
     eventState.pendingInitialRoundLeaderReveal &&
     currentRoundTeam === null;
 
+  const finalizeStartingTeamReveal = (teamId: string) => {
+    if (startingTeamRevealTimerRef.current !== null) {
+      window.clearTimeout(startingTeamRevealTimerRef.current);
+      startingTeamRevealTimerRef.current = null;
+    }
+
+    setEventState((current) => {
+      const teamExists = current.teams.some((team) => team.id === teamId);
+      const nextLeaderTeamId = teamExists ? teamId : current.currentRoundLeaderTeamId;
+
+      return {
+        ...current,
+        currentRoundLeaderTeamId: nextLeaderTeamId,
+        pendingInitialRoundLeaderReveal: false,
+        lastUpdatedAt: new Date().toISOString(),
+      };
+    });
+
+    setStartingTeamRevealTeamId(null);
+  };
+
   useEffect(() => {
     if (!eventState.pendingInitialRoundLeaderReveal) {
       setStartingTeamRevealTeamId(null);
@@ -217,27 +238,18 @@ function App() {
       return;
     }
 
-    if (startingTeamRevealTimerRef.current !== null) {
-      window.clearTimeout(startingTeamRevealTimerRef.current);
-      startingTeamRevealTimerRef.current = null;
-    }
-
     setStartingTeamRevealTeamId(teamId);
     startingTeamRevealTimerRef.current = window.setTimeout(() => {
-      setEventState((current) => {
-        const teamExists = current.teams.some((team) => team.id === teamId);
-        const nextLeaderTeamId = teamExists ? teamId : current.currentRoundLeaderTeamId;
-
-        return {
-          ...current,
-          currentRoundLeaderTeamId: nextLeaderTeamId,
-          pendingInitialRoundLeaderReveal: false,
-          lastUpdatedAt: new Date().toISOString(),
-        };
-      });
-      setStartingTeamRevealTeamId(null);
-      startingTeamRevealTimerRef.current = null;
+      finalizeStartingTeamReveal(teamId);
     }, INITIAL_ROUND_LEADER_REVEAL_MS);
+  };
+
+  const skipStartingTeamReveal = () => {
+    if (!startingTeamRevealTeamId) {
+      return;
+    }
+
+    finalizeStartingTeamReveal(startingTeamRevealTeamId);
   };
 
   const startNewGame = (pack: PackBundle) => {
@@ -531,6 +543,11 @@ function App() {
                   {eventState.teams.find((team) => team.id === startingTeamRevealTeamId)?.name ?? copy.unknownTeam}
                 </h3>
                 <p className="muted">{copy.startingTeamRevealHint}</p>
+                <div className="action-row">
+                  <button className="secondary-button" onClick={skipStartingTeamReveal}>
+                    {copy.skipStartingTeamReveal}
+                  </button>
+                </div>
               </div>
             ) : null}
             <TeamRaffle

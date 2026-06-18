@@ -70,12 +70,14 @@ describe('App', () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
     expect(screen.getByRole('heading', { name: /Empieza/ })).toBeInTheDocument();
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(10000);
-    });
+    expect(screen.getByRole('button', { name: 'Empezar ya' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar ya' }));
 
     expect(screen.getByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Ningun reto activo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mostrar marcador' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar marcador' }));
     expect(document.querySelectorAll('.score-card')).toHaveLength(2);
   });
 
@@ -110,9 +112,7 @@ describe('App', () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
     expect(screen.getByRole('heading', { name: /Empieza/ })).toBeInTheDocument();
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(10000);
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar ya' }));
 
     expect(document.querySelector('.round-progress-team-badge')).toHaveTextContent('Equipo Sol');
 
@@ -203,7 +203,7 @@ describe('App', () => {
     });
     expect(screen.getByRole('heading', { name: /Empieza/ })).toBeInTheDocument();
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(10000);
+      await vi.advanceTimersByTimeAsync(20000);
     });
 
     expect(screen.getByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
@@ -403,6 +403,9 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
     await user.click(screen.getByRole('button', { name: 'Sorteo aleatorio' }));
     expect(await screen.findByRole('heading', { name: 'Panel del juego' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mostrar marcador' })).toBeInTheDocument();
+    expect(screen.queryByText('Resumen de puntos')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Mostrar marcador' }));
 
     const summaryList = screen.getByText('Resumen de puntos').closest('.score-summary')?.querySelector('.score-summary-list');
     expect(summaryList).not.toBeNull();
@@ -486,6 +489,7 @@ describe('App', () => {
     const firstTeamCard = screen.getByRole('heading', { name: firstTeam.name, level: 4 }).closest('.award-card') as HTMLElement | null;
     expect(firstTeamCard).not.toBeNull();
     await user.click(within(firstTeamCard!).getByRole('button', { name: 'Todo el equipo' }));
+    await user.click(screen.getByRole('button', { name: 'Mostrar marcador' }));
 
     const expectedMemberPoints = challenge.points / 2;
     expect(screen.getByText(`${memberA.name}: ${expectedMemberPoints}`)).toBeInTheDocument();

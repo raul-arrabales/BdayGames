@@ -152,6 +152,8 @@ function TeamScoreCard({ copy, team, teamMembers, onAdjustManualScore }: TeamSco
 }
 
 export function Scoreboard({ copy, teams, members, onAdjustManualScore }: ScoreboardProps) {
+  const [isScoreboardExpanded, setIsScoreboardExpanded] = useState(false);
+  const scoreboardPanelId = useId();
   const teamEntries = useMemo(
     () =>
       teams.map((team) => ({
@@ -168,54 +170,80 @@ export function Scoreboard({ copy, teams, members, onAdjustManualScore }: Scoreb
 
   return (
     <section className="panel">
-      <div className="panel-header">
-        <h2>{copy.scoreboard}</h2>
-        <span className="badge">{copy.editScores}</span>
-      </div>
-      <div className="score-summary">
-        <div className="score-summary-header">
-          <h3>{copy.scoreSummary}</h3>
-          <span className="muted">
-            {copy.scoreLead}: {orderedTeams[0]?.team.name ?? '-'}
+      <div className="timer-panel scoreboard-panel">
+        <button
+          aria-controls={scoreboardPanelId}
+          aria-expanded={isScoreboardExpanded}
+          aria-label={isScoreboardExpanded ? copy.hideScoreboard : copy.showScoreboard}
+          className="timer-toggle scoreboard-toggle"
+          type="button"
+          onClick={() => setIsScoreboardExpanded((current) => !current)}
+        >
+          <span>{copy.scoreboard}</span>
+          <span className="scoreboard-toggle-meta">
+            <span className="badge">{copy.editScores}</span>
+            <span className="timer-toggle-icon scoreboard-toggle-icon" aria-hidden="true">
+              {isScoreboardExpanded ? (
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                  <path d="M7 14l5-5 5 5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                  <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                </svg>
+              )}
+            </span>
           </span>
-        </div>
-        <ul className="score-summary-list">
-          {orderedTeams.map(({ team }) => {
-            const deltaFromLeader = highestScore - team.score;
-            const fillWidth = highestScore > 0 ? (team.score / highestScore) * 100 : 100;
+        </button>
+      </div>
+      {isScoreboardExpanded ? (
+        <div className="scoreboard-panel-body" id={scoreboardPanelId}>
+          <div className="score-summary">
+            <div className="score-summary-header">
+              <h3>{copy.scoreSummary}</h3>
+              <span className="muted">
+                {copy.scoreLead}: {orderedTeams[0]?.team.name ?? '-'}
+              </span>
+            </div>
+            <ul className="score-summary-list">
+              {orderedTeams.map(({ team }) => {
+                const deltaFromLeader = highestScore - team.score;
+                const fillWidth = highestScore > 0 ? (team.score / highestScore) * 100 : 100;
 
-            return (
-              <li className="score-summary-item" key={team.id}>
-                <div className="score-summary-label">
-                  <span className="score-summary-swatch" style={{ backgroundColor: team.color }} />
-                  <strong>{team.name}</strong>
-                  <span>{team.score}</span>
-                </div>
-                <div className="score-summary-bar" aria-hidden="true">
-                  <div
-                    className="score-summary-fill"
-                    style={{ backgroundColor: team.color, width: `${Math.max(0, Math.min(100, fillWidth))}%` }}
-                  />
-                </div>
-                <span className="score-summary-delta">
-                  {deltaFromLeader === 0 ? copy.scoreLead : `${copy.scoreDifference} -${deltaFromLeader}`}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-      <div className="score-grid">
-        {teamEntries.map(({ team, members: membersForTeam }) => (
-          <TeamScoreCard
-            key={team.id}
-            copy={copy}
-            team={team}
-            teamMembers={membersForTeam}
-            onAdjustManualScore={onAdjustManualScore}
-          />
-        ))}
-      </div>
+                return (
+                  <li className="score-summary-item" key={team.id}>
+                    <div className="score-summary-label">
+                      <span className="score-summary-swatch" style={{ backgroundColor: team.color }} />
+                      <strong>{team.name}</strong>
+                      <span>{team.score}</span>
+                    </div>
+                    <div className="score-summary-bar" aria-hidden="true">
+                      <div
+                        className="score-summary-fill"
+                        style={{ backgroundColor: team.color, width: `${Math.max(0, Math.min(100, fillWidth))}%` }}
+                      />
+                    </div>
+                    <span className="score-summary-delta">
+                      {deltaFromLeader === 0 ? copy.scoreLead : `${copy.scoreDifference} -${deltaFromLeader}`}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+          <div className="score-grid">
+            {teamEntries.map(({ team, members: membersForTeam }) => (
+              <TeamScoreCard
+                key={team.id}
+                copy={copy}
+                team={team}
+                teamMembers={membersForTeam}
+                onAdjustManualScore={onAdjustManualScore}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

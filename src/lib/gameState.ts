@@ -10,7 +10,7 @@ import type {
 
 export const APP_STATE_VERSION = 7;
 export const DEFAULT_CHALLENGE_TIME_SECONDS = 90;
-export const INITIAL_ROUND_LEADER_REVEAL_MS = 10_000;
+export const INITIAL_ROUND_LEADER_REVEAL_MS = 20_000;
 
 const QUICK_SETUP_MEMBER_NAMES = [
   'Luna',
