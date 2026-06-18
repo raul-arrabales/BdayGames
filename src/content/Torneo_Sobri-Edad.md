@@ -62,7 +62,18 @@ summary: Torneo con pruebas inspiradas en los juegos rusos de Sobrinov
   rules:
     - Cada equipo deberá demostrar precisión, control y un poco de suerte para superar este desafío. El huevo debe golpear primero el suelo y, tras el rebote, acabar dentro del jarrón. Los equipos se turnarán lanzamiento a lanzamiento hasta que uno consiga 3 aciertos.
   points: 300
-  time: 30
+  time: 300
+- title: El Tesoro Sumergido
+  prompt: Un objeto descansa en el fondo de un jarrón lleno de agua hasta el borde. Sacarlo parece imposible, pero existe una solución elegante. ¿La encontraréis antes que el otro equipo?
+  rules:
+    - No se puede tocar ni mover el jarrón.
+    - No se puede vaciar ni derramar agua.
+    - Se permite utilizar únicamente los materiales proporcionados.
+    - El objeto debe salir completamente del agua.
+    - Se dispone de un intento por turno y cada equipo decide qué participante lo intenta. 
+    - Gana el equipo que primero consiga sacar el objeto sin derramar agua. 
+  points: 150
+  time: 300
 
 
 ## Sorpresas
