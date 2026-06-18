@@ -23,8 +23,10 @@ import {
   createMember,
   createTeam,
   fillQuickSetupTeams,
+  goBackActiveChallengePhase,
   initializeDraft,
   revealRandomTwist,
+  advanceActiveChallengePhase,
   setActiveChallenge,
   setActiveChallengeWithDuration,
   setCurrentRoundLeaderTeam,
@@ -392,6 +394,12 @@ function App() {
 
     return {
       ...state,
+      activeChallengePhaseIndex:
+        challenge.phases?.length
+          ? typeof state.activeChallengePhaseIndex === 'number'
+            ? Math.min(Math.max(0, state.activeChallengePhaseIndex), challenge.phases.length - 1)
+            : 0
+          : null,
       challengeTimerDurationSeconds: duration,
       challengeTimerSecondsLeft: secondsLeft,
       challengeTimerRunning: state.challengeTimerRunning && secondsLeft > 0,
@@ -566,6 +574,7 @@ function App() {
             currentRoundTeam={currentRoundTeam}
             activeChallenge={activeChallenge}
             resolvedChallenge={activeChallengeResolved}
+            activeChallengePhaseIndex={eventState.activeChallengePhaseIndex}
             activeChallengeChoiceTeamId={eventState.activeChallengeChoiceTeamId}
             activeChallengeChoiceOptionIndex={eventState.activeChallengeChoiceOptionIndex}
             activeChallengeSolutionRevealed={eventState.activeChallengeSolutionRevealed}
@@ -584,10 +593,24 @@ function App() {
               updateState((current) => {
                 const challenge = gamePack.challenges.find((entry) => entry.id === challengeId);
                 return challenge
-                  ? setActiveChallengeWithDuration(current, challengeId, challenge.time ?? DEFAULT_CHALLENGE_TIME_SECONDS)
+                  ? setActiveChallengeWithDuration(
+                      current,
+                      challengeId,
+                      challenge.time ?? DEFAULT_CHALLENGE_TIME_SECONDS,
+                      challenge.phases?.length ? 0 : null,
+                    )
                   : setActiveChallenge(current, challengeId);
               })
             }
+            onAdvancePhase={() =>
+              updateState((current) => {
+                const challenge = gamePack.challenges.find((entry) => entry.id === current.activeChallengeId);
+                return challenge?.phases?.length
+                  ? advanceActiveChallengePhase(current, challenge.phases.length)
+                  : current;
+              })
+            }
+            onGoBackPhase={() => updateState((current) => goBackActiveChallengePhase(current))}
             onSelectCurrentRoundTeam={(teamId) =>
               updateState((current) => setCurrentRoundLeaderTeam(current, teamId))
             }

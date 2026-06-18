@@ -710,6 +710,14 @@ input[type="color"]::-moz-color-swatch {
   outline: 2px dashed rgba(255, 211, 61, 0.45);
 }
 
+.challenge-card-hint {
+  color: #ffd33d;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .challenge-library-panel {
   grid-column: 1 / -1;
   display: grid;
@@ -807,6 +815,16 @@ input[type="color"]::-moz-color-swatch {
   font-weight: 700;
   color: rgba(255, 247, 237, 0.9);
   text-wrap: balance;
+}
+
+.phased-challenge-hero {
+  gap: 0.8rem;
+}
+
+.phase-progress-badge {
+  justify-self: start;
+  background: rgba(0, 179, 255, 0.18);
+  color: #d8f7ff;
 }
 
 .trivia-options-panel {
@@ -1158,6 +1176,40 @@ input[type="color"]::-moz-color-swatch {
   padding: 1rem 1.1rem;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.07);
+}
+
+.phase-box {
+  display: grid;
+  gap: 0.85rem;
+  background:
+    radial-gradient(circle at top right, rgba(0, 179, 255, 0.14), transparent 38%),
+    rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(0, 179, 255, 0.18);
+}
+
+.phase-box h4,
+.phase-box p,
+.rules-box strong {
+  margin: 0;
+}
+
+.phase-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: rgba(255, 247, 237, 0.82);
+}
+
+.phase-box-header span {
+  font-weight: 800;
+  color: #d8f7ff;
+}
+
+.phase-actions {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .twist-modal-backdrop {

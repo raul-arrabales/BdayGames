@@ -2,6 +2,7 @@ import YAML from 'yaml';
 import type {
   ChallengeCard,
   ChallengeCategory,
+  ChallengePhase,
   ChallengePreQuestion,
   ChallengeMultipleChoice,
   ChallengeVariant,
@@ -27,10 +28,17 @@ interface ChallengeDocumentShape {
   points?: number;
   time?: number;
   multipleChoice?: ChallengeMultipleChoiceShape;
+  phases?: ChallengePhaseShape[];
   preQuestion?: {
     prompt?: string;
     options?: ChallengeOptionShape[];
   };
+}
+
+interface ChallengePhaseShape {
+  title?: string;
+  description?: string;
+  rules?: string[];
 }
 
 interface ChallengeOptionShape {
@@ -51,6 +59,7 @@ interface NormalizedChallengeFields {
   points: number;
   time: number;
   multipleChoice?: ChallengeMultipleChoice;
+  phases?: ChallengePhase[];
 }
 
 const categoryMap: Record<string, ChallengeCategory> = {
@@ -121,7 +130,40 @@ function normalizeVariant(base: ChallengeVariant, variant: ChallengeVariant): No
     points: isFinitePositiveNumber(variant.points) ? Math.floor(variant.points) : base.points ?? 100,
     time: isFinitePositiveNumber(variant.time) ? Math.floor(variant.time) : base.time ?? DEFAULT_CHALLENGE_TIME_SECONDS,
     multipleChoice: variant.multipleChoice ?? base.multipleChoice,
+    phases: variant.phases ?? base.phases,
   };
+}
+
+function parsePhases(
+  parsed: ChallengePhaseShape[] | undefined,
+  challengeTitle: string,
+): ChallengePhase[] | undefined {
+  if (!parsed) {
+    return undefined;
+  }
+
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    throw new Error(`Challenge phases for "${challengeTitle}" must contain at least one phase.`);
+  }
+
+  return parsed.map((phase, index) => {
+    const title = phase.title?.trim();
+    const description = phase.description?.trim();
+
+    if (!title) {
+      throw new Error(`Challenge phase title is missing for "${challengeTitle}" at index ${index}.`);
+    }
+
+    if (!description) {
+      throw new Error(`Challenge phase description is missing for "${challengeTitle}" at index ${index}.`);
+    }
+
+    return {
+      title,
+      description,
+      rules: Array.isArray(phase.rules) ? phase.rules.map((rule) => rule.trim()).filter(Boolean) : [],
+    };
+  });
 }
 
 function parseMultipleChoice(
@@ -216,6 +258,7 @@ function parseChallenges(block: string, category: ChallengeCategory): ChallengeC
       points: parsed.points,
       time: parsed.time,
       multipleChoice: parseMultipleChoice(parsed.multipleChoice, parsed.title.trim()),
+      phases: parsePhases(parsed.phases, parsed.title.trim()),
     };
     const normalizedChallenge = normalizeVariant(challenge, challenge);
 
@@ -228,6 +271,7 @@ function parseChallenges(block: string, category: ChallengeCategory): ChallengeC
       points: normalizedChallenge.points,
       time: normalizedChallenge.time,
       multipleChoice: normalizedChallenge.multipleChoice,
+      phases: normalizedChallenge.phases,
       preQuestion: parsePreQuestion(parsed, normalizedChallenge),
     };
   });
@@ -316,5 +360,6 @@ export function resolveChallengeCard(challenge: ChallengeCard, optionIndex: numb
     points: selectedOption.challenge.points ?? challenge.points,
     time: selectedOption.challenge.time ?? challenge.time,
     multipleChoice: selectedOption.challenge.multipleChoice ?? challenge.multipleChoice,
+    phases: selectedOption.challenge.phases ?? challenge.phases,
   };
 }

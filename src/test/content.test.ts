@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import rawPack from '../content/fiesta-cumple.es.md?raw';
+import { createPackFromMarkdown } from '../lib/gamePacks';
 import { parseGamePack, resolveChallengeCard } from '../lib/content';
 
 describe('parseGamePack', () => {
@@ -26,6 +27,10 @@ describe('parseGamePack', () => {
     expect(cybersecurityChallenge?.multipleChoice?.answerIndex).toBe(0);
     expect(pack.twists.some((twist) => twist.effectType === 'steal_member')).toBe(true);
     expect(pack.twists.some((twist) => twist.effectType === 'shift_round_leader')).toBe(true);
+    const phasedDuel = pack.challenges.find((challenge) => challenge.title === 'Ingeniería Extrema');
+    expect(phasedDuel?.phases).toHaveLength(6);
+    expect(phasedDuel?.phases?.[0].title).toBe('Reclutamiento de Recursos');
+    expect(phasedDuel?.phases?.[5].rules).toContain('Gana el equipo cuyo coche recorra la mayor distancia.');
   });
 
   it('parses YAML frontmatter without Node buffer helpers', () => {
@@ -34,5 +39,28 @@ describe('parseGamePack', () => {
 
     expect(pack.title).toBe('Fiesta Familiar de Cumpleanos');
     expect(pack.summary).toContain('retos');
+  });
+
+  it('rejects phased challenges without required phase fields', () => {
+    const invalidPack = `---
+id: phased-invalid
+title: Pack inválido
+locale: es
+---
+
+## Reglas
+- Regla base
+
+## Retos:duel
+- title: Fase rota
+  prompt: Algo pasa.
+  phases:
+    - title: ""
+      description: Sin título no vale.
+  points: 100
+  time: 60
+`;
+
+    expect(() => createPackFromMarkdown(invalidPack, 'invalid.md')).toThrow(/phase title/i);
   });
 });

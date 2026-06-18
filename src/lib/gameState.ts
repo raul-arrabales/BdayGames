@@ -8,7 +8,7 @@ import type {
   TwistCard,
 } from '../types';
 
-export const APP_STATE_VERSION = 7;
+export const APP_STATE_VERSION = 8;
 export const DEFAULT_CHALLENGE_TIME_SECONDS = 90;
 export const INITIAL_ROUND_LEADER_REVEAL_MS = 20_000;
 
@@ -60,6 +60,7 @@ export function createInitialState(gamePack: GamePack): EventState {
     picks: [],
     currentRound: 1,
     activeChallengeId: null,
+    activeChallengePhaseIndex: null,
     activeChallengeChoiceTeamId: null,
     activeChallengeChoiceOptionIndex: null,
     activeChallengeSolutionRevealed: false,
@@ -160,6 +161,7 @@ export function fillQuickSetupTeams(state: EventState): EventState {
     picks: [],
     currentRound: 1,
     activeChallengeId: null,
+    activeChallengePhaseIndex: null,
     activeChallengeChoiceTeamId: null,
     activeChallengeChoiceOptionIndex: null,
     activeChallengeSolutionRevealed: false,
@@ -533,12 +535,14 @@ export function setActiveChallengeWithDuration(
   state: EventState,
   challengeId: string,
   durationSeconds: number,
+  initialPhaseIndex: number | null = null,
 ): EventState {
   const normalizedDuration = Math.max(1, Math.floor(durationSeconds));
 
   return {
     ...state,
     activeChallengeId: challengeId,
+    activeChallengePhaseIndex: initialPhaseIndex,
     activeChallengeChoiceTeamId: null,
     activeChallengeChoiceOptionIndex: null,
     activeChallengeSolutionRevealed: false,
@@ -547,6 +551,30 @@ export function setActiveChallengeWithDuration(
     challengeTimerSecondsLeft: normalizedDuration,
     challengeTimerRunning: false,
     screen: 'dashboard',
+    lastUpdatedAt: now(),
+  };
+}
+
+export function advanceActiveChallengePhase(state: EventState, totalPhases: number): EventState {
+  if (!state.activeChallengeId || totalPhases <= 0 || state.activeChallengePhaseIndex === null) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeChallengePhaseIndex: Math.min(state.activeChallengePhaseIndex + 1, totalPhases - 1),
+    lastUpdatedAt: now(),
+  };
+}
+
+export function goBackActiveChallengePhase(state: EventState): EventState {
+  if (!state.activeChallengeId || state.activeChallengePhaseIndex === null) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeChallengePhaseIndex: Math.max(0, state.activeChallengePhaseIndex - 1),
     lastUpdatedAt: now(),
   };
 }
@@ -707,6 +735,7 @@ export function completeChallenge(
       ...state,
       completedChallengeIds: [...state.completedChallengeIds, state.activeChallengeId],
       activeChallengeId: null,
+      activeChallengePhaseIndex: null,
       activeChallengeChoiceTeamId: null,
       activeChallengeChoiceOptionIndex: null,
       activeChallengeSolutionRevealed: false,
@@ -718,6 +747,7 @@ export function completeChallenge(
     undoAction: {
       type: 'complete_challenge',
       challengeId: state.activeChallengeId,
+      previousPhaseIndex: state.activeChallengePhaseIndex,
       previousChoiceTeamId: state.activeChallengeChoiceTeamId,
       previousChoiceOptionIndex: state.activeChallengeChoiceOptionIndex,
       previousSolutionRevealed: state.activeChallengeSolutionRevealed,
@@ -945,6 +975,7 @@ export function undoLastAction(state: EventState, undoAction: UndoAction | null)
         ...state,
         completedChallengeIds: state.completedChallengeIds.filter((id) => id !== undoAction.challengeId),
         activeChallengeId: undoAction.challengeId,
+        activeChallengePhaseIndex: undoAction.previousPhaseIndex,
         activeChallengeChoiceTeamId: undoAction.previousChoiceTeamId,
         activeChallengeChoiceOptionIndex: undoAction.previousChoiceOptionIndex,
         activeChallengeSolutionRevealed: undoAction.previousSolutionRevealed,

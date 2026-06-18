@@ -16,6 +16,7 @@ export interface ChallengeVariant {
   points?: number;
   time?: number;
   multipleChoice?: ChallengeMultipleChoice;
+  phases?: ChallengePhase[];
 }
 
 export interface ChallengeMultipleChoice {
@@ -32,6 +33,12 @@ export interface ChallengePreQuestionOption {
 export interface ChallengePreQuestion {
   prompt: string;
   options: ChallengePreQuestionOption[];
+}
+
+export interface ChallengePhase {
+  title: string;
+  description: string;
+  rules: string[];
 }
 
 export type TwistEffectType =
@@ -52,6 +59,7 @@ export interface ChallengeCard {
   time: number;
   multipleChoice?: ChallengeMultipleChoice;
   preQuestion?: ChallengePreQuestion;
+  phases?: ChallengePhase[];
 }
 
 export interface TwistCard {
@@ -125,6 +133,7 @@ export interface EventState {
   picks: DraftPick[];
   currentRound: number;
   activeChallengeId: string | null;
+  activeChallengePhaseIndex: number | null;
   activeChallengeChoiceTeamId: string | null;
   activeChallengeChoiceOptionIndex: number | null;
   activeChallengeSolutionRevealed: boolean;
@@ -168,6 +177,7 @@ export type UndoAction =
   | {
       type: 'complete_challenge';
       challengeId: string;
+      previousPhaseIndex: number | null;
       previousChoiceTeamId: string | null;
       previousChoiceOptionIndex: number | null;
       previousSolutionRevealed: boolean;

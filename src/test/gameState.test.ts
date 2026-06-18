@@ -19,9 +19,11 @@ import {
   completeChallenge,
   pauseChallengeTimer,
   resetChallengeTimer,
+  goBackActiveChallengePhase,
   setActiveChallengeWithDuration,
   setCurrentRoundLeaderTeam,
   setBirthdayPerson,
+  advanceActiveChallengePhase,
   selectChallengePreQuestionOption,
   selectChallengePreQuestionTeam,
   startChallengeTimer,
@@ -259,6 +261,27 @@ describe('game state helpers', () => {
     expect(reset.challengeTimerRunning).toBe(false);
   });
 
+  it('initializes and navigates phased challenges', () => {
+    const { pack, state } = seededState();
+    const challenge = pack.challenges.find((entry) => entry.phases?.length);
+    expect(challenge).toBeDefined();
+
+    const activated = setActiveChallengeWithDuration(state, challenge!.id, challenge!.time, 0);
+    expect(activated.activeChallengePhaseIndex).toBe(0);
+
+    const advanced = advanceActiveChallengePhase(activated, challenge!.phases!.length);
+    expect(advanced.activeChallengePhaseIndex).toBe(1);
+
+    const reverted = goBackActiveChallengePhase(advanced);
+    expect(reverted.activeChallengePhaseIndex).toBe(0);
+
+    const clamped = advanceActiveChallengePhase(
+      { ...advanced, activeChallengePhaseIndex: challenge!.phases!.length - 1 },
+      challenge!.phases!.length,
+    );
+    expect(clamped.activeChallengePhaseIndex).toBe(challenge!.phases!.length - 1);
+  });
+
   it('parses trivia multiple choice options from the pack', () => {
     const { pack } = seededState();
     const triviaChallenge = pack.challenges.find((challenge) => challenge.preQuestion);
@@ -302,6 +325,7 @@ describe('game state helpers', () => {
 
     const finished = {
       ...resolvedState,
+      activeChallengePhaseIndex: 0,
       activeChallengeChoiceTeamId: state.teams[1].id,
       activeChallengeChoiceOptionIndex: 1,
       currentRoundLeaderTeamId: state.teams[0].id,
@@ -311,6 +335,7 @@ describe('game state helpers', () => {
     expect(completion.state.currentRoundLeaderTeamId).toBe(state.teams[1].id);
     const reverted = undoLastAction(completion.state, completion.undoAction);
     expect(reverted.activeChallengeId).toBe(challenge.id);
+    expect(reverted.activeChallengePhaseIndex).toBe(0);
     expect(reverted.activeChallengeChoiceTeamId).toBe(state.teams[1].id);
     expect(reverted.activeChallengeChoiceOptionIndex).toBe(1);
     expect(reverted.currentRoundLeaderTeamId).toBe(state.teams[0].id);

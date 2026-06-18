@@ -13,6 +13,7 @@ interface DashboardScreenProps {
   currentRoundTeam: Team | null;
   activeChallenge: ChallengeCard | null;
   resolvedChallenge: ChallengeCard | null;
+  activeChallengePhaseIndex: number | null;
   activeChallengeChoiceTeamId: string | null;
   activeChallengeChoiceOptionIndex: number | null;
   activeChallengeSolutionRevealed: boolean;
@@ -28,6 +29,8 @@ interface DashboardScreenProps {
   challengeAwarded: boolean;
   canUndo: boolean;
   onSelectChallenge: (challengeId: string) => void;
+  onAdvancePhase: () => void;
+  onGoBackPhase: () => void;
   onSelectCurrentRoundTeam: (teamId: string) => void;
   onSelectPreQuestionOption: (optionIndex: number) => void;
   onAwardPoints: (teamId: string, memberId: string, points: number) => void;
@@ -53,6 +56,7 @@ export function DashboardScreen({
   currentRoundTeam,
   activeChallenge,
   resolvedChallenge,
+  activeChallengePhaseIndex,
   activeChallengeChoiceTeamId,
   activeChallengeChoiceOptionIndex,
   activeChallengeSolutionRevealed,
@@ -68,6 +72,8 @@ export function DashboardScreen({
   challengeAwarded,
   canUndo,
   onSelectChallenge,
+  onAdvancePhase,
+  onGoBackPhase,
   onSelectCurrentRoundTeam,
   onSelectPreQuestionOption,
   onAwardPoints,
@@ -95,6 +101,12 @@ export function DashboardScreen({
   const timerUrgencyClass =
     timerSecondsLeft <= 5 ? 'is-critical' : timerSecondsLeft <= 15 ? 'is-warning' : '';
   const preQuestion = activeChallenge?.preQuestion ?? null;
+  const activePhases = resolvedChallenge?.phases ?? activeChallenge?.phases ?? [];
+  const hasPhasedChallenge = activePhases.length > 0;
+  const currentPhaseIndex = hasPhasedChallenge ? Math.min(activeChallengePhaseIndex ?? 0, activePhases.length - 1) : null;
+  const currentPhase = currentPhaseIndex !== null ? activePhases[currentPhaseIndex] : null;
+  const isFirstPhase = currentPhaseIndex === null || currentPhaseIndex <= 0;
+  const isLastPhase = currentPhaseIndex === null || currentPhaseIndex >= activePhases.length - 1;
   const triviaMultipleChoice = resolvedChallenge?.category === 'trivia' ? resolvedChallenge.multipleChoice : undefined;
   const triviaQuestion = resolvedChallenge?.prompt ?? activeChallenge?.prompt ?? '';
   const triviaAnswerIndex = triviaMultipleChoice?.answerIndex ?? null;
@@ -220,6 +232,15 @@ export function DashboardScreen({
                       <p className="eyebrow">{copy.triviaQuestion}</p>
                       <h3>{triviaQuestion}</h3>
                     </div>
+                  ) : hasPhasedChallenge && currentPhase ? (
+                    <div className="challenge-question-hero phased-challenge-hero">
+                      <p className="eyebrow">{copy.phaseChallengeLabel}</p>
+                      <h3>{resolvedChallenge?.title ?? activeChallenge.title}</h3>
+                      <p>{triviaQuestion}</p>
+                      <p className="badge phase-progress-badge">
+                        {copy.phaseProgress} {currentPhaseIndex! + 1} / {activePhases.length}
+                      </p>
+                    </div>
                   ) : (
                     <div className="challenge-question-hero">
                       <h3>{resolvedChallenge?.title ?? activeChallenge.title}</h3>
@@ -261,14 +282,45 @@ export function DashboardScreen({
                     ) : null}
                   </div>
                 ) : null}
-                <div className="rules-box">
-                  <strong>{copy.rules}</strong>
-                  <ul>
-                    {(resolvedChallenge?.rules ?? activeChallenge.rules).map((rule) => (
-                      <li key={rule}>{rule}</li>
-                    ))}
-                  </ul>
-                </div>
+                {hasPhasedChallenge && currentPhase ? (
+                  <div className="rules-box phase-box">
+                    <div className="phase-box-header">
+                      <strong>{copy.phase}</strong>
+                      <span>
+                        {currentPhaseIndex! + 1} / {activePhases.length}
+                      </span>
+                    </div>
+                    <h4>{currentPhase.title}</h4>
+                    <p>{currentPhase.description}</p>
+                    {currentPhase.rules.length > 0 ? (
+                      <>
+                        <strong>{copy.phaseRules}</strong>
+                        <ul>
+                          {currentPhase.rules.map((rule) => (
+                            <li key={rule}>{rule}</li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : null}
+                    <div className="phase-actions">
+                      <button className="secondary-button" disabled={isFirstPhase} onClick={onGoBackPhase}>
+                        {copy.previousPhase}
+                      </button>
+                      <button className="primary-button" disabled={isLastPhase} onClick={onAdvancePhase}>
+                        {copy.nextPhase}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rules-box">
+                    <strong>{copy.rules}</strong>
+                    <ul>
+                      {(resolvedChallenge?.rules ?? activeChallenge.rules).map((rule) => (
+                        <li key={rule}>{rule}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="timer-panel">
                   <button
                     aria-controls={timerPanelId}

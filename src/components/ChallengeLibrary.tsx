@@ -67,6 +67,7 @@ export function ChallengeLibrary({
                       >
                         <strong>{challenge.title}</strong>
                         <span>{challenge.prompt}</span>
+                        {challenge.phases?.length ? <span className="challenge-card-hint">{copy.phaseChallengeLabel}</span> : null}
                         <span>
                           {challenge.points} pts · {challenge.time}s {completed ? `· ${copy.completed}` : ''}
                         </span>

@@ -539,6 +539,51 @@ describe('App', () => {
     expect(within(hero!).getByText(challenge.prompt)).toBeInTheDocument();
   });
 
+  it('reveals phased duel stages one step at a time', async () => {
+    const user = userEvent.setup();
+    const pack = parseGamePack(rawPack);
+    const challenge = pack.challenges.find((entry) => entry.title === 'Ingeniería Extrema');
+    expect(challenge?.phases).toHaveLength(6);
+    const state = createInitialState(pack);
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...state,
+          screen: 'dashboard',
+          activeChallengeId: challenge!.id,
+          activeChallengePhaseIndex: 0,
+          challengeTimerDurationSeconds: challenge!.time,
+          challengeTimerSecondsLeft: challenge!.time,
+          challengeTimerRunning: false,
+        },
+        undoAction: null,
+        packMarkdown: rawPack,
+        packFileName: 'fiesta-cumple.es.md',
+      }),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Continuar partida' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
+
+    expect(screen.getByText('Duelo por fases')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Ingeniería Extrema' })).toBeInTheDocument();
+    expect(screen.getByText('Reclutamiento de Recursos')).toBeInTheDocument();
+    expect(screen.queryByText('Mercado de Piezas')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Volver a la fase anterior' })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Revelar siguiente fase' }));
+    expect(screen.getByText('Revelación')).toBeInTheDocument();
+    expect(screen.queryByText('Reclutamiento de Recursos')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Volver a la fase anterior' }));
+    expect(screen.getByText('Reclutamiento de Recursos')).toBeInTheDocument();
+  });
+
   it('resolves a pre-question challenge by choosing a team and an option', async () => {
     const user = userEvent.setup();
     const pack = parseGamePack(rawPack);
