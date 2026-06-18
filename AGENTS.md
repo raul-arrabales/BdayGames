@@ -10,7 +10,8 @@ It must work entirely in the browser and stay deployable to GitHub Pages or othe
 - Do not add a backend, authentication, database, or server-side dependency.
 - Keep the app compatible with static hosting.
 - Persist event state in `localStorage`.
-- Treat saved-state compatibility as important. If state shape changes, add or update migration handling.
+- We are in active development, so backward compatibility for saved game state is not required.
+- Do not add migration handling for older saved game states unless explicitly requested.
 
 ## Product expectations
 
