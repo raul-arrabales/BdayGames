@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useState, type RefObject, type CSSProperties } from 'react';
 import type { Dictionary } from '../lib/i18n';
 import type { ChallengeCard, Member, Team, TwistCard } from '../types';
 import { ChallengeLibrary } from './ChallengeLibrary';
@@ -8,6 +8,7 @@ import { TeamRaffle } from './TeamRaffle';
 
 interface DashboardScreenProps {
   copy: Dictionary;
+  gamePanelRef?: RefObject<HTMLElement | null>;
   round: number;
   currentRoundChallengeCount: number;
   currentRoundTeam: Team | null;
@@ -52,6 +53,7 @@ interface DashboardScreenProps {
 
 export function DashboardScreen({
   copy,
+  gamePanelRef,
   round,
   currentRoundChallengeCount,
   currentRoundTeam,
@@ -181,7 +183,7 @@ export function DashboardScreen({
 
   return (
     <div className="dashboard-layout">
-      <section className="panel spotlight">
+      <section className="panel spotlight" ref={gamePanelRef}>
         <RoundProgress
           copy={copy}
           currentRound={round}

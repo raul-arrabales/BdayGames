@@ -269,6 +269,37 @@ describe('App', () => {
     expect(screen.queryByText(firstChallenge.title)).not.toBeInTheDocument();
   });
 
+  it('scrolls to the game panel after selecting a challenge from the library', async () => {
+    vi.useFakeTimers();
+    const scrollIntoViewMock = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoViewMock,
+    });
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Fiesta Familiar de Cumpleanos/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rellenar prueba 2x4' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sorteo aleatorio' }));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20000);
+    });
+
+    const pack = parseGamePack(rawPack);
+    const firstChallenge = pack.challenges[0];
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir biblioteca de retos' }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(firstChallenge.title) }));
+
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    expect(screen.getByRole('heading', { name: firstChallenge.title })).toBeInTheDocument();
+  });
+
   it('shows the round progress track with past, current and pending rounds', async () => {
     const user = userEvent.setup();
     const pack = parseGamePack(rawPack);

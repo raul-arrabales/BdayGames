@@ -91,6 +91,8 @@ function App() {
     secondsLeft: DEFAULT_CHALLENGE_TIME_SECONDS,
   });
   const startingTeamRevealTimerRef = useRef<number | null>(null);
+  const gamePanelRef = useRef<HTMLElement | null>(null);
+  const shouldScrollToGamePanelRef = useRef(false);
 
   useEffect(() => {
     const persisted = loadPersistedEvent();
@@ -189,6 +191,15 @@ function App() {
 
     timerSnapshotRef.current = { challengeId: currentChallengeId, secondsLeft: currentSecondsLeft };
   }, [eventState.activeChallengeId, eventState.challengeTimerSecondsLeft, eventState.screen, timerVolume]);
+
+  useEffect(() => {
+    if (!shouldScrollToGamePanelRef.current || eventState.screen !== 'dashboard' || !eventState.activeChallengeId) {
+      return;
+    }
+
+    gamePanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    shouldScrollToGamePanelRef.current = false;
+  }, [eventState.activeChallengeId, eventState.screen]);
 
   const gamePack = currentPack.pack;
   const activeChallenge = gamePack.challenges.find((challenge) => challenge.id === eventState.activeChallengeId) ?? null;
@@ -570,6 +581,7 @@ function App() {
         ) : (
           <DashboardScreen
             copy={copy}
+            gamePanelRef={gamePanelRef}
             round={eventState.currentRound}
             currentRoundChallengeCount={gamePack.challenges.length}
             currentRoundTeam={currentRoundTeam}
@@ -592,6 +604,7 @@ function App() {
             canUndo={Boolean(undoAction)}
             onSelectChallenge={(challengeId) =>
               updateState((current) => {
+                shouldScrollToGamePanelRef.current = true;
                 const challenge = gamePack.challenges.find((entry) => entry.id === challengeId);
                 return challenge
                   ? setActiveChallengeWithDuration(
