@@ -40,6 +40,7 @@ interface DashboardScreenProps {
   onPauseTimer: () => void;
   onResetTimer: () => void;
   onStopTimer: () => void;
+  onSetTimerDuration: (durationSeconds: number) => void;
   onRevealSolution: () => void;
   onChangeTimerVolume: (volume: number) => void;
   onRevealTwist: () => void;
@@ -83,6 +84,7 @@ export function DashboardScreen({
   onPauseTimer,
   onResetTimer,
   onStopTimer,
+  onSetTimerDuration,
   onRevealSolution,
   onChangeTimerVolume,
   onRevealTwist,
@@ -118,6 +120,26 @@ export function DashboardScreen({
   );
   const canRevealSolution = Boolean(triviaMultipleChoice && timerSecondsLeft <= 0);
   const twistButtonLabel = preQuestion ? copy.preQuestionTwistChoice : copy.randomTwist;
+  const timerMinutes = Math.floor(timerDurationSeconds / 60);
+  const timerSeconds = timerDurationSeconds % 60;
+
+  const formatTimerValue = (totalSeconds: number) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  };
+
+  const handleTimerMinutesChange = (value: string) => {
+    const nextMinutes = Math.max(0, Number.parseInt(value || '0', 10) || 0);
+    onSetTimerDuration(nextMinutes * 60 + timerSeconds);
+  };
+
+  const handleTimerSecondsChange = (value: string) => {
+    const parsedSeconds = Number.parseInt(value || '0', 10) || 0;
+    const nextSeconds = Math.min(59, Math.max(0, parsedSeconds));
+    onSetTimerDuration(timerMinutes * 60 + nextSeconds);
+  };
+
   useEffect(() => {
     if (activeTwist) {
       setIsTwistModalOpen(true);
@@ -352,12 +374,12 @@ export function DashboardScreen({
                           style={{ '--timer-empty-progress': timerEmptyProgress } as CSSProperties}
                         >
                           <div className="timer-ring-core" />
-                          <span>{timerSecondsLeft}s</span>
+                          <span>{formatTimerValue(timerSecondsLeft)}</span>
                         </div>
                         <div className="timer-meta">
                           <strong>{timerRunning ? copy.pauseTimer : copy.startTimer}</strong>
                           <span>
-                            {timerSecondsLeft}/{timerDurationSeconds}s
+                            {formatTimerValue(timerSecondsLeft)} / {formatTimerValue(timerDurationSeconds)}
                           </span>
                         </div>
                       </div>
@@ -376,20 +398,52 @@ export function DashboardScreen({
                             {copy.stopTimer}
                           </button>
                         </div>
-                        <label className="timer-volume-control">
-                          <span>{copy.timerVolume}</span>
-                          <input
-                            aria-label={copy.timerVolume}
-                            className="timer-volume-slider"
-                            max="1"
-                            min="0"
-                            step="0.05"
-                            type="range"
-                            value={timerVolume}
-                            onChange={(event) => onChangeTimerVolume(Number(event.target.value))}
-                          />
-                          <strong>{Math.round(timerVolume * 100)}%</strong>
-                        </label>
+                        <div className="timer-settings-row">
+                          <div className="timer-duration-control">
+                            <span>{copy.timerSetTime}</span>
+                            <div className="timer-duration-inputs">
+                              <label className="timer-duration-field">
+                                <span>{copy.timerMinutes}</span>
+                                <input
+                                  aria-label={copy.timerMinutes}
+                                  disabled={timerRunning}
+                                  inputMode="numeric"
+                                  min="0"
+                                  type="number"
+                                  value={timerMinutes}
+                                  onChange={(event) => handleTimerMinutesChange(event.target.value)}
+                                />
+                              </label>
+                              <label className="timer-duration-field">
+                                <span>{copy.timerSeconds}</span>
+                                <input
+                                  aria-label={copy.timerSeconds}
+                                  disabled={timerRunning}
+                                  inputMode="numeric"
+                                  max="59"
+                                  min="0"
+                                  type="number"
+                                  value={timerSeconds}
+                                  onChange={(event) => handleTimerSecondsChange(event.target.value)}
+                                />
+                              </label>
+                            </div>
+                          </div>
+                          <label className="timer-volume-control">
+                            <span>{copy.timerVolume}</span>
+                            <input
+                              aria-label={copy.timerVolume}
+                              className="timer-volume-slider"
+                              max="1"
+                              min="0"
+                              step="0.05"
+                              type="range"
+                              value={timerVolume}
+                              onChange={(event) => onChangeTimerVolume(Number(event.target.value))}
+                            />
+                            <strong>{Math.round(timerVolume * 100)}%</strong>
+                          </label>
+                        </div>
                       </div>
                     </div>
                   ) : null}

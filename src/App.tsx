@@ -34,6 +34,7 @@ import {
   pauseChallengeTimer,
   resetChallengeTimer,
   stopChallengeTimer,
+  setChallengeTimerDuration,
   selectChallengePreQuestionOption,
   toggleChallengeSolutionReveal,
   startChallengeTimer,
@@ -670,6 +671,16 @@ function App() {
             onPauseTimer={() => updateState((current) => pauseChallengeTimer(current))}
             onResetTimer={() => updateState((current) => resetChallengeTimer(current))}
             onStopTimer={() => updateState((current) => stopChallengeTimer(current))}
+            onSetTimerDuration={(durationSeconds) =>
+              setEventState((current) => {
+                const result = setChallengeTimerDuration(current, durationSeconds);
+                timerSnapshotRef.current = {
+                  challengeId: result.activeChallengeId,
+                  secondsLeft: result.challengeTimerSecondsLeft,
+                };
+                return result;
+              })
+            }
             onRevealSolution={() => updateState((current) => toggleChallengeSolutionReveal(current))}
             onChangeTimerVolume={setTimerVolume}
             onRevealTwist={() =>

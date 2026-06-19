@@ -682,6 +682,23 @@ export function stopChallengeTimer(state: EventState): EventState {
   };
 }
 
+export function setChallengeTimerDuration(state: EventState, durationSeconds: number): EventState {
+  if (!state.activeChallengeId || state.challengeTimerRunning) {
+    return state;
+  }
+
+  const safeDuration = Math.max(0, Math.floor(durationSeconds));
+
+  return {
+    ...state,
+    challengeTimerDurationSeconds: safeDuration,
+    challengeTimerSecondsLeft: safeDuration,
+    challengeTimerRunning: false,
+    activeChallengeSolutionRevealed: false,
+    lastUpdatedAt: now(),
+  };
+}
+
 export function revealChallengeSolution(state: EventState): EventState {
   if (!state.activeChallengeId || state.challengeTimerSecondsLeft > 0) {
     return state;

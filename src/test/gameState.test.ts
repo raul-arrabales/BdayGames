@@ -19,6 +19,7 @@ import {
   completeChallenge,
   pauseChallengeTimer,
   resetChallengeTimer,
+  setChallengeTimerDuration,
   goBackActiveChallengePhase,
   setActiveChallengeWithDuration,
   setCurrentRoundLeaderTeam,
@@ -259,6 +260,11 @@ describe('game state helpers', () => {
     const reset = resetChallengeTimer(paused);
     expect(reset.challengeTimerSecondsLeft).toBe(45);
     expect(reset.challengeTimerRunning).toBe(false);
+
+    const customized = setChallengeTimerDuration(reset, 125);
+    expect(customized.challengeTimerDurationSeconds).toBe(125);
+    expect(customized.challengeTimerSecondsLeft).toBe(125);
+    expect(customized.challengeTimerRunning).toBe(false);
   });
 
   it('initializes and navigates phased challenges', () => {

@@ -183,7 +183,53 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Reiniciar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Parar' })).toBeInTheDocument();
     expect(screen.getByLabelText('Volumen')).toBeInTheDocument();
+    expect(screen.getByLabelText('Minutos')).toHaveValue(0);
+    expect(screen.getByLabelText('Segundos')).toHaveValue(challenge.time);
     expect(document.querySelector('.timer-ring.is-warning')).toBeInTheDocument();
+  });
+
+  it('lets the operator set a custom timer while stopped and then start it', async () => {
+    const user = userEvent.setup();
+    const pack = createPackFromMarkdown(triviaPackMarkdown, 'trivia-solution.md').pack;
+    const challenge = pack.challenges[0];
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: PERSISTED_EVENT_VERSION,
+        state: {
+          ...createInitialState(pack),
+          screen: 'dashboard',
+          activeChallengeId: challenge.id,
+          challengeTimerDurationSeconds: challenge.time,
+          challengeTimerSecondsLeft: challenge.time,
+          challengeTimerRunning: false,
+        },
+        undoAction: null,
+        packMarkdown: triviaPackMarkdown,
+        packFileName: 'trivia-solution.md',
+      }),
+    );
+
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Continuar partida' }));
+    await user.click(screen.getByRole('button', { name: 'Mostrar temporizador' }));
+
+    const minutesInput = screen.getByLabelText('Minutos');
+    const secondsInput = screen.getByLabelText('Segundos');
+
+    await user.clear(minutesInput);
+    await user.type(minutesInput, '2');
+    await user.clear(secondsInput);
+    await user.type(secondsInput, '30');
+
+    expect(screen.getByText('2:30 / 2:30')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Iniciar' }));
+
+    expect(minutesInput).toBeDisabled();
+    expect(secondsInput).toBeDisabled();
   });
 
   it('keeps the challenge library collapsed by default and lets the operator toggle it', async () => {

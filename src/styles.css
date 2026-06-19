@@ -1155,6 +1155,7 @@ input[type="color"]::-moz-color-swatch {
   display: grid;
   gap: 0.9rem;
   min-width: 0;
+  width: 100%;
   align-self: stretch;
 }
 
@@ -1355,19 +1356,77 @@ input[type="color"]::-moz-color-swatch {
 .timer-volume-control {
   display: grid;
   gap: 0.4rem;
-  width: 100%;
-  min-width: 0;
+  width: min(100%, 8.5rem);
+  min-width: 8.5rem;
   padding: 0.9rem 1rem;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.12);
+  justify-self: center;
 }
 
+.timer-settings-row {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: 0.9rem;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.timer-duration-control {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  justify-self: center;
+}
+
+.timer-duration-control > span,
 .timer-volume-control span,
 .timer-volume-control strong {
   font-size: 0.78rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.timer-duration-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(4.75rem, 5.75rem));
+  gap: 0.7rem;
+  justify-content: start;
+}
+
+.timer-duration-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.timer-duration-field span {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 247, 237, 0.78);
+}
+
+.timer-duration-field input {
+  width: 100%;
+  min-width: 4.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  padding: 0.75rem 0.7rem;
+  background: rgba(10, 16, 37, 0.5);
+  color: #fff7ed;
+  font: inherit;
+}
+
+.timer-duration-field input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .timer-volume-slider {
@@ -1710,6 +1769,12 @@ input[type="color"]::-moz-color-swatch {
   .winner-medal {
     width: 4.6rem;
     height: 4.6rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .timer-settings-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
