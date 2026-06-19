@@ -72,6 +72,7 @@ export const strings = {
     undo: 'Deshacer ultimo paso',
     nextRound: 'Siguiente ronda',
     selectChallenge: 'Seleccionar reto',
+    randomChallenge: 'Reto aleatorio',
     noChallenge: 'Ningun reto activo',
     completed: 'Completado',
     round: 'Ronda',

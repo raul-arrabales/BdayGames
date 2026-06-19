@@ -1,4 +1,5 @@
 import type {
+  ChallengeSelectionOption,
   EventState,
   GamePack,
   Member,
@@ -529,6 +530,24 @@ export function applyManualAllMembersScore(
 
 export function setActiveChallenge(state: EventState, challengeId: string): EventState {
   return setActiveChallengeWithDuration(state, challengeId, DEFAULT_CHALLENGE_TIME_SECONDS);
+}
+
+export function selectRandomAvailableChallenge(
+  state: EventState,
+  challenges: ChallengeSelectionOption[],
+): EventState {
+  const remaining = challenges.filter((challenge) => !state.completedChallengeIds.includes(challenge.id));
+  if (remaining.length === 0) {
+    return state;
+  }
+
+  const selected = remaining[Math.floor(Math.random() * remaining.length)];
+  return setActiveChallengeWithDuration(
+    state,
+    selected.id,
+    selected.time,
+    selected.initialPhaseIndex,
+  );
 }
 
 export function setActiveChallengeWithDuration(

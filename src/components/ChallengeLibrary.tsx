@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import type { RefObject } from 'react';
 import type { Dictionary } from '../lib/i18n';
 import type { ChallengeCard } from '../types';
 
@@ -6,6 +6,10 @@ interface ChallengeLibraryProps {
   copy: Dictionary;
   challenges: ChallengeCard[];
   completedChallengeIds: string[];
+  panelRef?: RefObject<HTMLElement | null>;
+  isOpen: boolean;
+  onToggleOpen: () => void;
+  onClose: () => void;
   onSelect: (challengeId: string) => void;
 }
 
@@ -13,9 +17,12 @@ export function ChallengeLibrary({
   copy,
   challenges,
   completedChallengeIds,
+  panelRef,
+  isOpen,
+  onToggleOpen,
+  onClose,
   onSelect,
 }: ChallengeLibraryProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const grouped = challenges.reduce<Record<string, ChallengeCard[]>>((accumulator, challenge) => {
     accumulator[challenge.category] ??= [];
     accumulator[challenge.category].push(challenge);
@@ -23,13 +30,13 @@ export function ChallengeLibrary({
   }, {});
 
   return (
-    <section className="panel challenge-library-panel">
+    <section className="panel challenge-library-panel" ref={panelRef}>
       <button
         type="button"
         aria-label={isOpen ? copy.closeChallengeLibrary : copy.openChallengeLibrary}
         aria-expanded={isOpen}
         className="challenge-library-toggle"
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={onToggleOpen}
       >
         <span>
           <strong>{copy.challengeLibrary}</strong>
@@ -47,7 +54,7 @@ export function ChallengeLibrary({
           <button
             type="button"
             className="ghost-button challenge-library-close"
-            onClick={() => setIsOpen(false)}
+            onClick={onClose}
           >
             {copy.collapseChallengeLibrary}
           </button>

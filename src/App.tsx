@@ -26,6 +26,7 @@ import {
   goBackActiveChallengePhase,
   initializeDraft,
   revealRandomTwist,
+  selectRandomAvailableChallenge,
   advanceActiveChallengePhase,
   setActiveChallenge,
   setActiveChallengeWithDuration,
@@ -614,6 +615,19 @@ function App() {
                       challenge.phases?.length ? 0 : null,
                     )
                   : setActiveChallenge(current, challengeId);
+              })
+            }
+            onSelectRandomChallenge={() =>
+              updateState((current) => {
+                shouldScrollToGamePanelRef.current = true;
+                return selectRandomAvailableChallenge(
+                  current,
+                  gamePack.challenges.map((challenge) => ({
+                    id: challenge.id,
+                    time: challenge.time ?? DEFAULT_CHALLENGE_TIME_SECONDS,
+                    initialPhaseIndex: challenge.phases?.length ? 0 : null,
+                  })),
+                );
               })
             }
             onAdvancePhase={() =>

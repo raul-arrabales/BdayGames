@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type RefObject, type CSSProperties } from 'react';
+import { useEffect, useId, useRef, useState, type RefObject, type CSSProperties } from 'react';
 import type { Dictionary } from '../lib/i18n';
 import type { ChallengeCard, Member, Team, TwistCard } from '../types';
 import { ChallengeLibrary } from './ChallengeLibrary';
@@ -30,6 +30,7 @@ interface DashboardScreenProps {
   challengeAwarded: boolean;
   canUndo: boolean;
   onSelectChallenge: (challengeId: string) => void;
+  onSelectRandomChallenge: () => void;
   onAdvancePhase: () => void;
   onGoBackPhase: () => void;
   onSelectCurrentRoundTeam: (teamId: string) => void;
@@ -75,6 +76,7 @@ export function DashboardScreen({
   challengeAwarded,
   canUndo,
   onSelectChallenge,
+  onSelectRandomChallenge,
   onAdvancePhase,
   onGoBackPhase,
   onSelectCurrentRoundTeam,
@@ -98,6 +100,9 @@ export function DashboardScreen({
   const [isTwistModalOpen, setIsTwistModalOpen] = useState(false);
   const [isChallengeActionsExpanded, setIsChallengeActionsExpanded] = useState(false);
   const [isTimerExpanded, setIsTimerExpanded] = useState(false);
+  const [isChallengeLibraryOpen, setIsChallengeLibraryOpen] = useState(false);
+  const challengeLibraryRef = useRef<HTMLElement | null>(null);
+  const shouldScrollToChallengeLibraryRef = useRef(false);
   const timerPanelId = useId();
   const challengeActionsPanelId = useId();
   const timerProgress = timerDurationSeconds > 0 ? timerSecondsLeft / timerDurationSeconds : 0;
@@ -167,6 +172,15 @@ export function DashboardScreen({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isTwistModalOpen]);
 
+  useEffect(() => {
+    if (!isChallengeLibraryOpen || !shouldScrollToChallengeLibraryRef.current) {
+      return;
+    }
+
+    challengeLibraryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    shouldScrollToChallengeLibraryRef.current = false;
+  }, [isChallengeLibraryOpen]);
+
   const openTwistModal = () => {
     if (activeTwist) {
       setIsTwistModalOpen(true);
@@ -179,6 +193,11 @@ export function DashboardScreen({
   const applyTwistAndClose = () => {
     onApplyTwist();
     setIsTwistModalOpen(false);
+  };
+
+  const openChallengeLibraryFromEmptyState = () => {
+    shouldScrollToChallengeLibraryRef.current = true;
+    setIsChallengeLibraryOpen(true);
   };
 
   return (
@@ -521,7 +540,14 @@ export function DashboardScreen({
         ) : (
           <div className="empty-state">
             <h3>{copy.noChallenge}</h3>
-            <p>{copy.selectChallenge}</p>
+            <div className="action-row">
+              <button className="primary-button" onClick={openChallengeLibraryFromEmptyState}>
+                {copy.selectChallenge}
+              </button>
+              <button className="secondary-button" onClick={onSelectRandomChallenge}>
+                {copy.randomChallenge}
+              </button>
+            </div>
           </div>
         )}
 
@@ -570,6 +596,10 @@ export function DashboardScreen({
         copy={copy}
         challenges={challenges}
         completedChallengeIds={completedChallengeIds}
+        panelRef={challengeLibraryRef}
+        isOpen={isChallengeLibraryOpen}
+        onToggleOpen={() => setIsChallengeLibraryOpen((current) => !current)}
+        onClose={() => setIsChallengeLibraryOpen(false)}
         onSelect={onSelectChallenge}
       />
     </div>

@@ -81,6 +81,43 @@ describe('App', () => {
     expect(document.querySelectorAll('.score-card')).toHaveLength(2);
   });
 
+  it('shows direct challenge actions when no challenge is active', async () => {
+    vi.useFakeTimers();
+    const scrollIntoViewMock = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoViewMock,
+    });
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Fiesta Familiar de Cumpleanos/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rellenar prueba 2x4' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sorteo aleatorio' }));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20000);
+    });
+
+    const pack = parseGamePack(rawPack);
+    const firstChallenge = pack.challenges[0];
+
+    fireEvent.click(screen.getByRole('button', { name: 'Seleccionar reto' }));
+
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    expect(screen.getByRole('button', { name: 'Contraer biblioteca' })).toBeInTheDocument();
+    expect(screen.getByText(firstChallenge.title)).toBeInTheDocument();
+
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Reto aleatorio' }));
+
+    expect(randomSpy).toHaveBeenCalled();
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    expect(screen.getByRole('heading', { name: firstChallenge.title })).toBeInTheDocument();
+  });
+
   it('lets the operator draw the starting team for a new round', async () => {
     vi.useFakeTimers();
     const pack = parseGamePack(rawPack);

@@ -62,6 +62,12 @@ export interface ChallengeCard {
   phases?: ChallengePhase[];
 }
 
+export interface ChallengeSelectionOption {
+  id: string;
+  time: number;
+  initialPhaseIndex: number | null;
+}
+
 export interface TwistCard {
   id: string;
   title: string;
