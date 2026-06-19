@@ -74,6 +74,44 @@ summary: Torneo con pruebas inspiradas en los juegos rusos de Sobrinov
     - Gana el equipo que primero consiga sacar el objeto sin derramar agua. 
   points: 150
   time: 300
+- title: Ingeniería Extrema
+  prompt: Cada equipo deberá diseñar y construir una máquina utilizando únicamente las piezas que consiga durante las distintas fases del desafío.
+  phases:
+    - title: Acopio de Recursos
+      description: Los equipos seleccionan piezas de LEGO de un repositorio común sin conocer todavía el desafío final.
+      rules:
+        - Los equipos se turnan para escoger piezas.
+        - Cada turno permite coger un número limitado de piezas (10).
+        - Las piezas elegidas no pueden devolverse.
+    - title: Revelación
+      description: Se anuncia que la máquina que deberán construir es un vehículo capaz de recorrer la máxima distancia posible.
+    - title: Última Oportunidad
+      description: Último turno para conseguir piezas adicionales.
+      rules:
+        - Cada equipo dispone de un único turno extra de selección ahora que ya saben que tienen que construir un vehículo.
+    - title: Mercado de Piezas
+      description: Los equipos pueden negociar libremente entre sí.
+      rules:
+        - Se permite comprar, vender o intercambiar piezas por puntos.
+        - Todas las negociaciones deben completarse antes de finalizar la fase.
+    - title: Construcción
+      description: Es el momento de diseñar y montar el vehículo.
+      rules:
+        - Solo pueden utilizarse las piezas obtenidas.
+        - El vehículo debe ser capaz de rodar por sí mismo.
+        - "Tiempo máximo de construcción: 15 minutos."
+    - title: Prueba de Rodadura
+      description: Todos los coches se enfrentan en la misma rampa.
+      rules:
+        - El coche se colocará en la misma posición inicial para todos los equipos.
+        - No se permite empujar ni impulsar el vehículo.
+        - El coche se soltará simplemente desde reposo.
+        - Gana el equipo cuyo coche recorra la mayor distancia.
+        - Si un coche pierde piezas durante el recorrido, la distancia sigue siendo válida.
+        - Si un coche no rueda, su distancia será cero.
+  points: 500
+  time: 600
+
 
 
 ## Sorpresas
