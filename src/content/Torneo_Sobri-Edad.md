@@ -12,7 +12,7 @@ summary: Torneo con pruebas inspiradas en los juegos rusos de Sobrinov
 - Gana el equipo con mayor puntuacion al cerrar la ultima ronda.
 
 ## Retos:trivia
-- title: Pon a prueba el conocimiento de tu equipo
+- title: Pon a prueba el conocimiento de tu equipo (Mec/IT)
   prompt: Responde la pregunta segun la opcion elegida.
   preQuestion:
     prompt: ¿Queréis una pregunta de (A) Mecánica del Automóvil o (B) Cyberseguridad?
@@ -54,6 +54,171 @@ summary: Torneo con pruebas inspiradas en los juegos rusos de Sobrinov
     - Si falla, rebote para el otro equipo.
   points: 100
   time: 45
+- title: Pon a prueba el conocimiento de tu equipo (Sp/Inv)
+  prompt: Responde la pregunta según la opción elegida.
+  preQuestion:
+    prompt: ¿Queréis una pregunta de (A) Industria Espacial o (B) Inversión Minorista?
+    options:
+      - label: (A) Industria Espacial
+        challenge:
+          prompt: ¿Por qué es más difícil enviar una nave a Mercurio que a Marte?
+          multipleChoice:
+            options:
+              - Porque Mercurio tiene una atmósfera muy densa
+              - Porque hay que reducir mucha velocidad orbital para acercarse al Sol
+              - Porque Mercurio está más lejos de la Tierra que Marte
+              - Porque Mercurio tiene una gravedad superior a la de Júpiter
+            answerIndex: 1
+            explanation: Una nave que sale de la Tierra ya viaja alrededor del Sol a gran velocidad. Para llegar a Mercurio debe perder gran parte de esa velocidad orbital, lo que requiere mucha energía y maniobras complejas.
+          rules:
+            - Responde un único representante.
+          points: 100
+          time: 45
+      - label: (B) Inversión Minorista
+        challenge:
+          prompt: ¿Cuál es la principal ventaja de un fondo indexado global frente a comprar acciones de una única empresa?
+          multipleChoice:
+            options:
+              - Garantiza rentabilidad positiva todos los años
+              - Está protegido por el Estado frente a pérdidas
+              - Reduce el riesgo al diversificar entre muchas empresas
+              - No puede perder valor en mercados bajistas
+              - El índice siempre se comporta mejor que una única empresa
+            answerIndex: 2
+            explanation: Un fondo indexado global reparte la inversión entre cientos o miles de empresas, reduciendo el impacto que tendría el mal comportamiento de una sola compañía.
+          rules:
+            - Responde un único representante.
+          points: 100
+          time: 45
+    rules:
+      - Un representante responde por turno.
+      - Si falla, rebote para el otro equipo.
+  points: 100
+  time: 45
+- title: Pon a prueba el conocimiento de tu equipo (Can/Dev)
+  prompt: Responde la pregunta según la opción elegida.
+  preQuestion:
+    prompt: ¿Queréis una pregunta de (A) Educación Canina o (B) Psicología del Desarrollo?
+    options:
+      - label: (A) Educación Canina
+        challenge:
+          prompt: Cuando un perro recibe una recompensa inmediatamente después de sentarse cuando se le da la orden, ¿qué principio de aprendizaje se está utilizando?
+          multipleChoice:
+            options:
+              - Habituación o asentamiento
+              - Refuerzo positivo
+              - Asimilación positiva
+              - Castigo negativo
+              - Impronta positiva
+              - Refuerzo negativo
+            answerIndex: 1
+            explanation: El refuerzo positivo consiste en añadir algo que el perro valora (comida, juego o atención) para aumentar la probabilidad de que repita la conducta.
+          rules:
+            - Responde un único representante.
+          points: 100
+          time: 45
+      - label: (B) Psicología del Desarrollo
+        challenge:
+          prompt: ¿Cuál de los siguientes logros cognitivos suele aparecer primero en el desarrollo infantil según la teoría de Piaget?
+          multipleChoice:
+            options:
+              - Pensamiento hipotético-deductivo
+              - Conservación de la cantidad
+              - Permanencia del objeto
+              - Razonamiento proporcional
+            answerIndex: 2
+            explanation: La permanencia del objeto aparece durante la etapa sensoriomotora, mientras que la conservación surge más tarde durante las operaciones concretas y el razonamiento hipotético-deductivo durante las operaciones formales.
+          rules:
+            - Responde un único representante.
+          points: 100
+          time: 45
+    rules:
+      - Un representante responde por turno.
+      - Si falla, rebote para el otro equipo.
+  points: 100
+  time: 45
+- title: Pon a prueba el conocimiento de tu equipo (Bio/Sp)
+  prompt: Responde la pregunta según la opción elegida.
+  preQuestion:
+    prompt: ¿Queréis una pregunta de (A) Biología de los Conejos o (B) Industria Espacial Avanzada?
+    options:
+    - label: (A) Biología de los Conejos
+      challenge:
+        prompt: ¿Por qué los conejos domésticos producen dos tipos distintos de excrementos y se comen uno de ellos?
+        multipleChoice:
+          options:
+            - Para marcar territorio
+            - Para regular la temperatura corporal
+            - Para aprovechar nutrientes producidos durante la digestión
+            - Para evitar depredadores
+          answerIndex: 2
+          explanation: Los conejos producen cecotrofos, ricos en nutrientes y vitaminas generados por la fermentación intestinal, que vuelven a ingerir para completar la digestión.
+        rules:
+          - Responde un único representante.
+        points: 100
+        time: 45
+    - label: (B) Industria Espacial Avanzada
+      challenge:
+        prompt: ¿Cuál es la principal ventaja de reutilizar la primera etapa de un cohete orbital?
+        multipleChoice:
+          options:
+            - Aumentar la velocidad de la luz
+            - Reducir significativamente los costes de lanzamiento
+            - Eliminar la necesidad de combustible
+            - Evitar cualquier riesgo durante el despegue
+          answerIndex: 1
+          explanation: La primera etapa suele ser la parte más cara del vehículo. Recuperarla y reutilizarla permite reducir considerablemente el coste por lanzamiento.
+        rules:
+          - Responde un único representante.
+        points: 100
+        time: 45
+    rules:
+      - Un representante responde por turno.
+      - Si falla, rebote para el otro equipo.
+    points: 100
+    time: 45
+- title: Pon a prueba el conocimiento de tu equipo (VG/Met)
+  prompt: Responde la pregunta según la opción elegida.
+  preQuestion:
+    prompt: ¿Queréis una pregunta de (A) Videojuegos o (B) Meteorología?
+    options:
+    - label: (A) Videojuegos
+      challenge:
+        prompt: ¿Cuál fue el videojuego más vendido de la historia?
+        multipleChoice:
+          options:
+            - GTA V
+            - Minecraft
+            - Tetris
+            - Wii Sports
+          answerIndex: 1
+          explanation: El juego más vendido de la historia es Minecraft, con más de 350 millones de copias comercializadas. Le sigue de cerca Tetris, con más de 200 millones (gracias a sus múltiples adaptaciones), y Grand Theft Auto V (GTA V), que supera los 200 millones de unidades vendidas.
+        rules:
+          - Responde un único representante.
+        points: 100
+        time: 45
+    - label: (B) Meteorología
+      challenge:
+        prompt: ¿Es cierto que los rayos nunca caen dos veces en el mismo sitio?
+        multipleChoice:
+          options:
+            - Sí, porque la descarga eléctrica neutraliza temporalmente la zona
+            - "Depende: solo pueden caer dos veces si la segunda descarga ocurre antes de 30 segundos"
+            - Sí, salvo que el lugar haya sido bendecido por un meteorólogo profesional
+            - No, de hecho los rayos suelen impactar repetidamente en los mismos puntos
+          answerIndex: 3
+          explanation: Los rayos pueden caer en el mismo lugar más de una vez. De hecho, los rayos frecuentemente caen en el mismo lugar repetidamente, en especial en objetos altos, puntiagudos y aislados. Al Empire State Building le caen más de 100 rayos al año.
+        rules:
+          - Responde un único representante.
+        points: 100
+        time: 45
+    rules:
+      - Un representante responde por turno.
+      - Si falla, rebote para el otro equipo.
+    points: 100
+    time: 45
+
+
 
 
 ## Retos:duel

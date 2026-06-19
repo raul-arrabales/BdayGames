@@ -107,7 +107,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Seleccionar reto' }));
 
     expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
-    expect(screen.getByRole('button', { name: 'Contraer biblioteca' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cerrar biblioteca de retos' })).toBeInTheDocument();
     expect(screen.getByText(firstChallenge.title)).toBeInTheDocument();
 
     const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
@@ -298,10 +298,10 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Abrir biblioteca de retos' }));
 
-    expect(screen.getByRole('button', { name: 'Contraer biblioteca' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cerrar biblioteca de retos' })).toBeInTheDocument();
     expect(screen.getByText(firstChallenge.title)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Contraer biblioteca' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar biblioteca de retos' }));
 
     expect(screen.queryByText(firstChallenge.title)).not.toBeInTheDocument();
   });

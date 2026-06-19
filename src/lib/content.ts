@@ -181,6 +181,10 @@ function parseMultipleChoice(
     throw new Error(`Challenge multiple choice for "${challengeTitle}" must have exactly four options.`);
   }
 
+  if (options.some((option) => typeof option !== 'string' || !option.trim())) {
+    throw new Error(`Challenge multiple choice for "${challengeTitle}" must contain four non-empty text options.`);
+  }
+
   if (
     typeof answerIndex !== 'number' ||
     !Number.isInteger(answerIndex) ||

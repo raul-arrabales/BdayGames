@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import rawPack from '../content/fiesta-cumple.es.md?raw';
+import rawSobriPack from '../content/Torneo_Sobri-Edad.md?raw';
 import { createPackFromMarkdown } from '../lib/gamePacks';
 import { parseGamePack, resolveChallengeCard } from '../lib/content';
 
@@ -39,6 +40,43 @@ describe('parseGamePack', () => {
 
     expect(pack.title).toBe('Fiesta Familiar de Cumpleanos');
     expect(pack.summary).toContain('retos');
+  });
+
+  it('parses multiple choice options containing colons as plain text', () => {
+    const pack = parseGamePack(rawSobriPack);
+    const lightningChallenge = pack.challenges.find((challenge) => challenge.title === 'Pon a prueba el conocimiento de tu equipo (VG/Met)');
+    const meteorologyChallenge = lightningChallenge ? resolveChallengeCard(lightningChallenge, 1) : null;
+
+    expect(meteorologyChallenge?.multipleChoice?.options[1]).toBe(
+      'Depende: solo pueden caer dos veces si la segunda descarga ocurre antes de 30 segundos',
+    );
+  });
+
+  it('rejects multiple choice options that are not plain text', () => {
+    const invalidPack = `---
+id: invalid-options
+title: Pack inválido
+locale: es
+---
+
+## Reglas
+- Regla base
+
+## Retos:trivia
+- title: Opción rota
+  prompt: Elige una.
+  multipleChoice:
+    options:
+      - Bien
+      - Mal: esto no va entre comillas
+      - Otra
+      - Última
+    answerIndex: 0
+  points: 100
+  time: 60
+`;
+
+    expect(() => createPackFromMarkdown(invalidPack, 'invalid-options.md')).toThrow(/non-empty text options/i);
   });
 
   it('rejects phased challenges without required phase fields', () => {

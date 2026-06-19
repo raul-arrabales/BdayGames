@@ -40,7 +40,6 @@ export const strings = {
     challengeLibrary: 'Biblioteca de retos',
     openChallengeLibrary: 'Abrir biblioteca de retos',
     closeChallengeLibrary: 'Cerrar biblioteca de retos',
-    collapseChallengeLibrary: 'Contraer biblioteca',
     scoreboard: 'Marcador',
     showScoreboard: 'Mostrar marcador',
     hideScoreboard: 'Ocultar marcador',

@@ -9,7 +9,6 @@ interface ChallengeLibraryProps {
   panelRef?: RefObject<HTMLElement | null>;
   isOpen: boolean;
   onToggleOpen: () => void;
-  onClose: () => void;
   onSelect: (challengeId: string) => void;
 }
 
@@ -20,7 +19,6 @@ export function ChallengeLibrary({
   panelRef,
   isOpen,
   onToggleOpen,
-  onClose,
   onSelect,
 }: ChallengeLibraryProps) {
   const grouped = challenges.reduce<Record<string, ChallengeCard[]>>((accumulator, challenge) => {
@@ -51,13 +49,6 @@ export function ChallengeLibrary({
 
       {isOpen ? (
         <div className="challenge-library-content">
-          <button
-            type="button"
-            className="ghost-button challenge-library-close"
-            onClick={onClose}
-          >
-            {copy.collapseChallengeLibrary}
-          </button>
           <div className="category-grid">
             {Object.entries(grouped).map(([category, categoryChallenges]) => (
               <div key={category}>

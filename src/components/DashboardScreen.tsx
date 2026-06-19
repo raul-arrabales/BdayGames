@@ -599,7 +599,6 @@ export function DashboardScreen({
         panelRef={challengeLibraryRef}
         isOpen={isChallengeLibraryOpen}
         onToggleOpen={() => setIsChallengeLibraryOpen((current) => !current)}
-        onClose={() => setIsChallengeLibraryOpen(false)}
         onSelect={onSelectChallenge}
       />
     </div>
