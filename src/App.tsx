@@ -5,7 +5,15 @@ import { LandingScreen } from './components/LandingScreen';
 import { SetupScreen } from './components/SetupScreen';
 import { WinnerScreen } from './components/WinnerScreen';
 import { TeamRaffle } from './components/TeamRaffle';
-import { builtInGamePacks, createPackFromMarkdown, resolvePersistedPack, type PackBundle } from './lib/gamePacks';
+import {
+  builtInGamePackErrors,
+  builtInGamePacks,
+  createFallbackPackBundle,
+  createPackFromMarkdown,
+  describePackParsingError,
+  resolvePersistedPack,
+  type PackBundle,
+} from './lib/gamePacks';
 import { resolveChallengeCard } from './lib/content';
 import {
   DEFAULT_CHALLENGE_TIME_SECONDS,
@@ -52,7 +60,7 @@ import {
 } from './lib/storage';
 import type { EventState, PersistedEvent, UndoAction } from './types';
 
-const defaultPack = builtInGamePacks[0];
+const defaultPack = builtInGamePacks[0] ?? createFallbackPackBundle();
 const TIMER_VOLUME_STORAGE_KEY = 'bday-games-timer-volume';
 
 interface SavedSession {
@@ -66,6 +74,15 @@ function finalizeGameState(state: EventState): EventState {
     winner: computeWinner(state.teams),
     screen: 'winner',
   };
+}
+
+function getBuiltInPackErrorMessage(copy: typeof strings.es): string | null {
+  if (builtInGamePackErrors.length === 0) {
+    return null;
+  }
+
+  const error = builtInGamePackErrors[0];
+  return `${copy.builtInPackLoadError}: ${error.fileName}. ${copy.errorDetails}: ${error.detail}`;
 }
 
 function App() {
@@ -97,6 +114,7 @@ function App() {
 
   useEffect(() => {
     const persisted = loadPersistedEvent();
+    const builtInPackError = getBuiltInPackErrorMessage(copy);
     setHasStoredSave(Boolean(persisted));
     if (persisted) {
       const resolvedPack = resolvePersistedPack(persisted);
@@ -111,6 +129,8 @@ function App() {
       } else {
         setLandingError(copy.missingPack);
       }
+    } else if (builtInPackError) {
+      setLandingError(builtInPackError);
     }
 
     setHydrated(true);
@@ -383,6 +403,7 @@ function App() {
   };
 
   const startBuiltInPack = (packId: string) => {
+    setLandingError(null);
     const pack = builtInGamePacks.find((entry) => entry.pack.id === packId);
     if (!pack) {
       setLandingError(copy.missingPack);
@@ -424,8 +445,8 @@ function App() {
       const markdown = await file.text();
       const pack = createPackFromMarkdown(markdown, file.name);
       startNewGame(pack);
-    } catch {
-      setLandingError(copy.invalidPack);
+    } catch (error) {
+      setLandingError(`${copy.invalidPack} ${copy.errorDetails}: ${describePackParsingError(error)}`);
     }
   };
 

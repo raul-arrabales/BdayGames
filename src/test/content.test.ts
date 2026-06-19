@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import rawPack from '../content/fiesta-cumple.es.md?raw';
-import rawSobriPack from '../content/Torneo_Sobri-Edad.md?raw';
 import { createPackFromMarkdown } from '../lib/gamePacks';
 import { parseGamePack, resolveChallengeCard } from '../lib/content';
 
@@ -43,7 +42,44 @@ describe('parseGamePack', () => {
   });
 
   it('parses multiple choice options containing colons as plain text', () => {
-    const pack = parseGamePack(rawSobriPack);
+    const pack = parseGamePack(`---
+id: colon-options
+title: Pack con dos puntos
+locale: es
+---
+
+## Reglas
+- Regla base
+
+## Retos:trivia
+- title: Pon a prueba el conocimiento de tu equipo (VG/Met)
+  prompt: Tema general
+  preQuestion:
+    prompt: Elige categoria
+    options:
+      - label: (A) Videojuegos
+        challenge:
+          prompt: Pregunta A
+          multipleChoice:
+            options:
+              - Opcion 1
+              - Opcion 2
+              - Opcion 3
+              - Opcion 4
+            answerIndex: 0
+      - label: (B) Meteorologia
+        challenge:
+          prompt: Pregunta B
+          multipleChoice:
+            options:
+              - Nunca
+              - "Depende: solo pueden caer dos veces si la segunda descarga ocurre antes de 30 segundos"
+              - Siempre
+              - A veces
+            answerIndex: 1
+  points: 100
+  time: 45
+`);
     const lightningChallenge = pack.challenges.find((challenge) => challenge.title === 'Pon a prueba el conocimiento de tu equipo (VG/Met)');
     const meteorologyChallenge = lightningChallenge ? resolveChallengeCard(lightningChallenge, 1) : null;
 

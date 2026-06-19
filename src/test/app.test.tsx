@@ -53,6 +53,37 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
   });
 
+  it('shows a controlled error on landing when a built-in pack fails to parse at startup', async () => {
+    vi.resetModules();
+    vi.doMock('../lib/gamePacks', async () => {
+      const actual = await vi.importActual<typeof import('../lib/gamePacks')>('../lib/gamePacks');
+
+      return {
+        ...actual,
+        builtInGamePacks: actual.builtInGamePacks.slice(0, 1),
+        builtInGamePackErrors: [
+          {
+            fileName: 'Torneo_Sobri-Edad.md',
+            message: 'broken pack',
+            detail: 'Linea 12, columna 3. broken pack',
+          },
+        ],
+      };
+    });
+
+    const { default: MockedApp } = await import('../App');
+
+    render(<MockedApp />);
+
+    expect(
+      screen.getByText('No se pudo cargar el juego integrado: Torneo_Sobri-Edad.md. Detalle: Linea 12, columna 3. broken pack'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Bday Games' })).toBeInTheDocument();
+
+    vi.doUnmock('../lib/gamePacks');
+    vi.resetModules();
+  });
+
   it('can auto-fill a quick two-team setup from the setup screen', async () => {
     vi.useFakeTimers();
     render(<App />);
@@ -180,6 +211,35 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Continuar partida' }));
 
     expect(screen.getByRole('heading', { name: 'Configuracion de equipos' })).toBeInTheDocument();
+  });
+
+  it('shows a controlled error after uploading an invalid pack and keeps the landing available', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const uploadInput = document.querySelector('.upload-input');
+    expect(uploadInput).not.toBeNull();
+
+    const invalidFile = new File(
+      [
+        `---
+id: invalido
+title: Pack roto
+locale: es
+---
+
+## Retos:trivia
+- title: Falta prompt
+`,
+      ],
+      'pack-roto.md',
+      { type: 'text/markdown' },
+    );
+
+    await user.upload(uploadInput as HTMLInputElement, invalidFile);
+
+    expect(screen.getByText(/No se pudo leer ese archivo de juego\. Detalle:/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Bday Games' })).toBeInTheDocument();
   });
 
   it('keeps the timer collapsed by default and reveals controls on demand', async () => {

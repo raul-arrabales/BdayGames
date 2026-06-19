@@ -82,17 +82,21 @@ export function LandingScreen({
           </div>
 
           <div className="pack-list">
-            {builtInPacks.map((bundle) => (
-              <button key={bundle.pack.id} className="pack-card" onClick={() => onChoosePack(bundle.pack.id)}>
-                <div className="pack-card-top">
-                  <h3>{bundle.pack.title}</h3>
-                  <span className="badge">{bundle.fileName}</span>
-                </div>
-                <p className="muted">{bundle.pack.summary}</p>
-                <p className="muted">{bundle.summary}</p>
-                <div className="pack-card-action">{copy.startPack}</div>
-              </button>
-            ))}
+            {builtInPacks.length > 0 ? (
+              builtInPacks.map((bundle) => (
+                <button key={bundle.pack.id} className="pack-card" onClick={() => onChoosePack(bundle.pack.id)}>
+                  <div className="pack-card-top">
+                    <h3>{bundle.pack.title}</h3>
+                    <span className="badge">{bundle.fileName}</span>
+                  </div>
+                  <p className="muted">{bundle.pack.summary}</p>
+                  <p className="muted">{bundle.summary}</p>
+                  <div className="pack-card-action">{copy.startPack}</div>
+                </button>
+              ))
+            ) : (
+              <p className="muted">{copy.noBuiltInPacksAvailable}</p>
+            )}
           </div>
         </article>
 

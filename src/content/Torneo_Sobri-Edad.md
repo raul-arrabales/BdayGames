@@ -11,6 +11,53 @@ summary: Torneo con pruebas inspiradas en los juegos rusos de Sobrinov
 - Las cartas sorpresa pueden alterar la dinámica del juego.
 - Gana el equipo con mayor puntuacion al cerrar la ultima ronda.
 
+## Retos:skill
+- title: Torre relampago
+  prompt: Construye la torre mas alta con objetos seguros en 5 minutos.
+  rules:
+    - La torre deberá soportar un objeto secreto durante 10 segundos. 
+    - El objeto secreto se revelará después de los 90 segundos de construcción. 
+    - La torre que más tiempo aguante sin caer gana. 
+    - Si todas las torres aguantan 10 segundos, se repite ronda aumentando altura. 
+  points: 120
+  time: 300
+- title: Mimo turbo
+  prompt: Representa una pelicula sin hablar y consigue que tu equipo la adivine.
+  rules:
+    - Cada equipo tiene un intento por pelicula.
+    - El capitán elige el miembro del equipo que tienen que adivinar. 
+    - El equipo que tiene el turno comienza eligiendo película. 
+  points: 100
+  time: 60
+- title: Catapulta humana
+  prompt: Un miembro lanza, otro hace de "catapulta" usando una toalla o manta pequeña sujetada entre dos personas.
+  rules:
+    - Hay que encestar la pelota en el cubo utilizando la catapulta.
+    - Los dos equipos lanzan a la vez en dos cubos diferentes. 
+    - Gana el equipo que meta más pelotas en el cubo en 2 minutos. 
+    - El capitán de cada equipo decide quién lanza y quien hace de catapulta. 
+  points: 100
+  time: 120
+- title: Transporte nuclear
+  prompt: Mover el huevo por el circuito entre todos los miembros del equipo usando únicamente cucharas.
+  rules:
+    - No se puede tocar el huevo con las manos. 
+    - No se puede coger la cuchara con las manos. 
+    - Si cae, vuelta al inicio. 
+    - Gana el equipo más rápido.  
+    - Los conos indican el punto de relevo entre miembros del equipo. 
+  points: 100
+  time: 300
+- title: El laberinto humano
+  prompt: Un jugador vendado debe recorrer el circuito guiado únicamente por las instrucciones del equipo.
+  rules:
+    - El capitán de cada equipo decide quién es el corredor vendado. 
+    - Ambos corredores salen a la vez por el mismo circuito (que no conocen). 
+    - Ambos equipos pueden dar instrucciones verbales, pero no tocar a los corredores.
+    - Gana el equipo más rápido que toque todos los conos en el orden establecido.
+  points: 100
+  time: 300
+
 ## Retos:trivia
 - title: Pon a prueba el conocimiento de tu equipo (Mec/IT)
   prompt: Responde la pregunta segun la opcion elegida.
